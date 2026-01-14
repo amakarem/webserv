@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/09 18:32:26 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/01/09 21:05:39 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/01/14 16:24:17 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -121,6 +121,29 @@ void Server::validateConfig()
     std::cout << "Port:" << this->port;
     std::cout << "\nRoot directory:" << this->rootdir;
     std::cout << "\nindex file:" << this->index << "\n";
+    startListening();
+}
+
+void Server::startListening()
+{
+    listenFd = socket(AF_INET, SOCK_STREAM, 0);
+    int opt = 1;
+    sockaddr_in addr;
+    std::memset(&addr, 0, sizeof(addr));
+    
+    if (listenFd < 0)
+        throw std::runtime_error("socket() failed");
+    if (setsockopt(listenFd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
+        throw std::runtime_error("setsockopt() failed");
+    addr.sin_family = AF_INET;
+    addr.sin_addr.s_addr = INADDR_ANY;     // 0.0.0.0
+    addr.sin_port = htons(port);           // IMPORTANT
+
+    if (bind(listenFd, (sockaddr*)&addr, sizeof(addr)) < 0)
+        throw std::runtime_error("bind() failed");
+    if (listen(listenFd, 128) < 0)
+        throw std::runtime_error("listen() failed");
+    std::cout << "Server listening on port " << port << std::endl;
 }
 
 const char *Server::openFileError::what() const throw()

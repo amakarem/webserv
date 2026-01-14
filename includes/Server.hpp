@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/09 18:42:01 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/01/09 21:13:36 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/01/14 16:11:30 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,11 +20,16 @@
 #include <map>
 #include <algorithm>
 #include <cctype>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <unistd.h>
+#include <cstring>
 
 class Server
 {
     private:
-        std::map<std::string, std::string>   config;
+        int listenFd;
         int port;
         std::string rootdir;
         std::string index;
@@ -37,6 +42,7 @@ class Server
         Server &operator=(Server const &src);
         void setConfig(char const *filename);
         void validateConfig();
+        void startListening();
         
         class openFileError : public std::exception
         {
