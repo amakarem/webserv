@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/09 18:32:26 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/01/17 18:00:46 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/01/17 18:24:17 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,7 +21,9 @@ static std::string trim(const std::string &s)
     return s.substr(start, end - start + 1);
 }
 
-Server::Server()
+Server::Server() {}
+
+void Server::setdefaultConf()
 {
     char const *filename = "config/webserv.conf";
 
@@ -121,7 +123,6 @@ void Server::validateConfig()
     std::cout << "Port:" << this->port;
     std::cout << "\nRoot directory:" << this->rootdir;
     std::cout << "\nindex file:" << this->index << "\n";
-    startListening();
 }
 
 void Server::startListening()
@@ -144,7 +145,6 @@ void Server::startListening()
     if (listen(listenFd, 128) < 0)
         throw std::runtime_error("listen() failed");
     std::cout << "Server listening on port " << port << std::endl;
-    run();
 }
 
 void Server::run()
@@ -211,7 +211,7 @@ void Server::run()
                     // Minimal fixed response
                     const char *response =
                         "HTTP/1.1 200 OK\r\n"
-                        "Content-Length: 13\r\n"
+                        "Content-Length: 34\r\n"
                         "Content-Type: text/plain\r\n"
                         "\r\n"
                         "Hello, world! my server is working";

@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/09 18:26:46 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/01/17 17:59:07 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/01/17 18:17:20 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,12 +19,15 @@ int main(int argc, char **argv)
         std::cerr << "Usage: ./webserv [config_file]\n";
         return (1);
     }
+    Server server;
     try
     {
         if (argc == 1)
-            Server server;
+            server.setdefaultConf();
         else if (argc == 2)
-            Server server(argv[1]);
+            server.setConfig(argv[1]);
+        server.startListening();
+        server.run();
         // while (1)
         //     ; // temporary (select loop later)
     }

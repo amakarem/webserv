@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/09 18:42:01 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/01/17 17:59:26 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/01/17 18:14:39 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -41,6 +41,7 @@ class Server
         ~Server();
         Server(Server const &src);
         Server &operator=(Server const &src);
+        void setdefaultConf();
         void setConfig(char const *filename);
         void validateConfig();
         void startListening();
