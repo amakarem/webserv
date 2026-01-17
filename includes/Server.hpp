@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/09 18:42:01 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/01/14 16:11:30 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/01/17 17:59:26 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,7 +17,7 @@
 #include <iostream>
 #include <string>
 #include <exception>
-#include <map>
+#include <vector>
 #include <algorithm>
 #include <cctype>
 #include <sys/socket.h>
@@ -29,6 +29,7 @@
 class Server
 {
     private:
+        std::vector<int> clients;
         int listenFd;
         int port;
         std::string rootdir;
@@ -43,6 +44,7 @@ class Server
         void setConfig(char const *filename);
         void validateConfig();
         void startListening();
+        void run();
         
         class openFileError : public std::exception
         {

@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/09 18:32:26 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/01/14 16:24:17 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/01/17 18:00:46 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -144,6 +144,83 @@ void Server::startListening()
     if (listen(listenFd, 128) < 0)
         throw std::runtime_error("listen() failed");
     std::cout << "Server listening on port " << port << std::endl;
+    run();
+}
+
+void Server::run()
+{
+    fd_set readfds;
+
+    while (1)
+    {
+        FD_ZERO(&readfds);
+
+        // Add listening socket
+        FD_SET(listenFd, &readfds);
+        int maxFd = listenFd;
+
+        // Add all client sockets
+        for (size_t i = 0; i < this->clients.size(); ++i)
+        {
+            FD_SET(this->clients[i], &readfds);
+            if (this->clients[i] > maxFd)
+                maxFd = this->clients[i];
+        }
+
+        // Wait for activity
+        int activity = select(maxFd + 1, &readfds, NULL, NULL, NULL);
+        if (activity < 0)
+        {
+            std::cerr << "select() error\n";
+            continue;
+        }
+
+        // New connection
+        if (FD_ISSET(listenFd, &readfds))
+        {
+            int newClient = accept(listenFd, NULL, NULL);
+            if (newClient >= 0)
+            {
+                this->clients.push_back(newClient);
+                std::cout << "New client connected: " << newClient << std::endl;
+            }
+        }
+
+        // Check existing this->clients
+        for (size_t i = 0; i < this->clients.size(); )
+        {
+            int fd = this->clients[i];
+            if (FD_ISSET(fd, &readfds))
+            {
+                char buffer[4096];
+                int bytesRead = recv(fd, buffer, sizeof(buffer) - 1, 0);
+
+                if (bytesRead <= 0)
+                {
+                    // Client disconnected
+                    std::cout << "Client disconnected: " << fd << std::endl;
+                    close(fd);
+                    this->clients.erase(this->clients.begin() + i);
+                    continue; // skip increment
+                }
+                else
+                {
+                    buffer[bytesRead] = '\0';
+                    std::cout << "Received from client " << fd << ":\n" << buffer << std::endl;
+
+                    // Minimal fixed response
+                    const char *response =
+                        "HTTP/1.1 200 OK\r\n"
+                        "Content-Length: 13\r\n"
+                        "Content-Type: text/plain\r\n"
+                        "\r\n"
+                        "Hello, world! my server is working";
+                    send(fd, response, strlen(response), 0);
+                }
+            }
+            ++i;
+        }
+    }
 }
 
 const char *Server::openFileError::what() const throw()

@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/09 18:26:46 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/01/14 16:18:50 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/01/17 17:59:07 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,8 +25,8 @@ int main(int argc, char **argv)
             Server server;
         else if (argc == 2)
             Server server(argv[1]);
-        while (1)
-            ; // temporary (select loop later)
+        // while (1)
+        //     ; // temporary (select loop later)
     }
     catch (std::exception &e)
     {
