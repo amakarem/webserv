@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/24 19:05:01 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/01/24 20:52:41 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/01/24 21:31:47 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,12 +24,11 @@ class HttpRequest
         std::string method;
         std::string path;
         std::string version;
+        std::string getMimeType(const std::string &path);
 
     public:
         std::string extractPath(const std::string &request);
-        bool fileExists(const std::string &path);
-        bool readFile(const std::string &path, std::string &out);
-        std::string buildHttpResponse(const std::string &body, bool ok = true);
+        std::string buildHttpResponse(const std::string &body, bool ok, size_t fileSize = 0);
 };
 
 #endif

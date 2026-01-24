@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/09 18:32:26 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/01/24 21:10:38 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/01/24 21:26:37 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -179,16 +179,11 @@ void Server::run()
             }
         }
 
-        // --- EINTR-safe select ---
-        int activity;
-        do
-        {
-            activity = select(maxFd + 1, &readfds, &writefds, NULL, NULL);
-        } while (activity < 0 && errno == EINTR);
-
+        // Wait for activity
+        int activity = select(maxFd + 1, &readfds, NULL, NULL, NULL);
         if (activity < 0)
         {
-            std::cerr << "select() error: " << strerror(errno) << std::endl;
+            std::cerr << "select() error\n";
             continue;
         }
 
@@ -248,25 +243,14 @@ void Server::run()
                 if (!fullPath.empty() && stat(fullPath.c_str(), &st) == 0 && !S_ISDIR(st.st_mode))
                 {
                     c->setFile(new std::ifstream(fullPath.c_str(), std::ios::in | std::ios::binary));
-
-                    std::ostringstream oss;
-                    oss << "HTTP/1.1 200 OK\r\n"
-                        << "Content-Length: " << st.st_size << "\r\n"
-                        << "Content-Type: text/html\r\n"
-                        << "Connection: close\r\n\r\n";
-                    c->setHeaderBuffer(oss.str());
+                    std::string headers = r.buildHttpResponse("", true, st.st_size);
+                    c->setHeaderBuffer(headers);
                 }
                 else
                 {
                     // 404
-                    std::string msg = "<h1>404 Not Found</h1>";
-                    std::ostringstream oss;
-                    oss << "HTTP/1.1 404 Not Found\r\n"
-                        << "Content-Length: " << msg.length() << "\r\n"
-                        << "Content-Type: text/html\r\n"
-                        << "Connection: close\r\n\r\n"
-                        << msg;
-                    c->setHeaderBuffer(oss.str());
+                    std::string headers = r.buildHttpResponse("<h1>404 Not Found</h1>", false);
+                    c->setHeaderBuffer(headers);
                     c->setFinished(true);
                 }
 
@@ -379,8 +363,8 @@ void Server::run()
 //                     clients.erase(clients.begin() + i);
 //                     continue;
 //                 }
-
-//                 std::string urlPath = extractPath(request);
+//                 HttpRequest r;
+//                 std::string urlPath = r.extractPath(request);
 //                 std::cout << "\nClient " << fd << " requested: " << urlPath << std::endl;
 //                 std::string fullPath = resolvePath(urlPath);
 //                 std::string body;
