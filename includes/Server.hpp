@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/09 18:42:01 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/01/24 19:34:41 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/01/24 21:13:14 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,11 +25,13 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <cstring>
+#include "Client.hpp"
 
 class Server
 {
     private:
-        std::vector<int> clients;
+        // std::vector<int> clients;
+        std::vector<Client *> clients;
         int listenFd;
         int port;
         std::string rootdir;

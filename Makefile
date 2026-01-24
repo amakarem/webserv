@@ -6,13 +6,13 @@
 #    By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2026/01/09 18:24:28 by aelaaser          #+#    #+#              #
-#    Updated: 2026/01/09 21:13:44 by aelaaser         ###   ########.fr        #
+#    Updated: 2026/01/24 20:56:49 by aelaaser         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
 CC = c++
 CFLAGS = -Wall -Werror -Wextra -std=c++98
-SRCS = main.cpp srcs/Server.cpp
+SRCS = main.cpp srcs/Server.cpp srcs/HttpRequest.cpp srcs/Client.cpp
 OBJS = $(SRCS:.cpp=.o)
 NAME = webserv
 INCLUDES    = -Iincludes

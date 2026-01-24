@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/09 18:32:26 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/01/24 20:14:06 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/01/24 21:10:38 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -155,125 +155,286 @@ void Server::startListening()
 
 void Server::run()
 {
-    fd_set readfds;
+    fd_set readfds, writefds;
 
     while (1)
     {
         FD_ZERO(&readfds);
+        FD_ZERO(&writefds);
 
-        // Add listening socket
+        // --- Listening socket ---
         FD_SET(listenFd, &readfds);
         int maxFd = listenFd;
 
-        // Add all client sockets
-        for (size_t i = 0; i < this->clients.size(); ++i)
+        // --- Add clients ---
+        for (size_t i = 0; i < clients.size(); ++i)
         {
-            FD_SET(this->clients[i], &readfds);
-            if (this->clients[i] > maxFd)
-                maxFd = this->clients[i];
-        }
-
-        // Wait for activity
-        int activity = select(maxFd + 1, &readfds, NULL, NULL, NULL);
-        if (activity < 0)
-        {
-            std::cerr << "select() error\n";
-            continue;
-        }
-
-        // New connection
-        if (FD_ISSET(listenFd, &readfds))
-        {
-            int newClient = accept(listenFd, NULL, NULL);
-            if (newClient >= 0)
+            int fd = clients[i]->getFd();
+            if (fd >= 0)
             {
-                this->clients.push_back(newClient);
-                std::cout << "New client connected: " << newClient << std::endl;
+                FD_SET(fd, &readfds);
+                FD_SET(fd, &writefds);
+                if (fd > maxFd)
+                    maxFd = fd;
             }
         }
 
-        // Check existing this->clients
-        for (size_t i = 0; i < this->clients.size(); )
+        // --- EINTR-safe select ---
+        int activity;
+        do
         {
-            int fd = this->clients[i];
-            if (FD_ISSET(fd, &readfds))
-            {
-                char buffer[4096];
-                std::string request;
+            activity = select(maxFd + 1, &readfds, &writefds, NULL, NULL);
+        } while (activity < 0 && errno == EINTR);
 
-                while (request.find("\r\n\r\n") == std::string::npos)
+        if (activity < 0)
+        {
+            std::cerr << "select() error: " << strerror(errno) << std::endl;
+            continue;
+        }
+
+        // --- Accept new client ---
+        if (FD_ISSET(listenFd, &readfds))
+        {
+            int newFd = accept(listenFd, NULL, NULL);
+            if (newFd >= 0)
+            {
+                Client* c = new Client();
+                c->setFd(newFd);
+                c->setHeadersSent(false);
+                c->setFinished(false);
+                c->setFile(NULL);
+                clients.push_back(c);
+                std::cout << "New client connected: " << newFd << std::endl;
+            }
+        }
+
+        // --- Handle existing clients ---
+        for (size_t i = 0; i < clients.size(); )
+        {
+            Client* c = clients[i];
+            int fd = c->getFd();
+
+            // Skip invalid FDs
+            if (fd < 0)
+            {
+                clients.erase(clients.begin() + i);
+                delete c;
+                continue;
+            }
+
+            // 1️⃣ Read request
+            if (!c->isHeadersSent() && FD_ISSET(fd, &readfds))
+            {
+                char buffer[1024];
+                HttpRequest r;
+                int bytesRead = recv(fd, buffer, sizeof(buffer)-1, 0);
+
+                if (bytesRead <= 0)
                 {
-                    int r = recv(fd, buffer, sizeof(buffer) - 1, 0);
-                    if (r <= 0)
-                        break;
-                    buffer[r] = '\0';
-                    request += buffer;
-                }
-                
-                if (request.empty())
-                {
-                    // Client disconnected
                     std::cout << "Client disconnected: " << fd << std::endl;
+                    if (c->getFile()) { c->getFile()->close(); delete c->getFile(); }
                     close(fd);
+                    delete c;
                     clients.erase(clients.begin() + i);
                     continue;
                 }
 
-                std::string urlPath = extractPath(request);
-                std::cout << "\nClient " << fd << " requested: " << urlPath << std::endl;
+                buffer[bytesRead] = '\0';
+                std::string request(buffer);
+                std::string urlPath = r.extractPath(request);
                 std::string fullPath = resolvePath(urlPath);
-                std::string body;
-                std::string response;
 
                 struct stat st;
                 if (!fullPath.empty() && stat(fullPath.c_str(), &st) == 0 && !S_ISDIR(st.st_mode))
                 {
-                    // Read file
-                    std::ifstream file(fullPath.c_str(), std::ios::in | std::ios::binary);
-                    if (file)
-                    {
-                        std::ostringstream ss;
-                        ss << file.rdbuf();
-                        body = ss.str();
-                        // Build 200 OK response
-                        std::ostringstream oss;
-                        oss << "HTTP/1.1 200 OK\r\n"
-                            << "Content-Length: " << body.length() << "\r\n"
-                            << "Content-Type: text/html\r\n"
-                            << "Connection: close\r\n"
-                            << "\r\n"
-                            << body;
-                        response = oss.str();
-                    }
-                    else
-                        response = "HTTP/1.1 500 Internal Server Error\r\nContent-Length:0\r\n\r\n"; // File exists but cannot open (rare)
+                    c->setFile(new std::ifstream(fullPath.c_str(), std::ios::in | std::ios::binary));
+
+                    std::ostringstream oss;
+                    oss << "HTTP/1.1 200 OK\r\n"
+                        << "Content-Length: " << st.st_size << "\r\n"
+                        << "Content-Type: text/html\r\n"
+                        << "Connection: close\r\n\r\n";
+                    c->setHeaderBuffer(oss.str());
                 }
                 else
                 {
-                    // 404 Not Found
+                    // 404
                     std::string msg = "<h1>404 Not Found</h1>";
                     std::ostringstream oss;
                     oss << "HTTP/1.1 404 Not Found\r\n"
                         << "Content-Length: " << msg.length() << "\r\n"
                         << "Content-Type: text/html\r\n"
-                        << "Connection: close\r\n"
-                        << "\r\n"
+                        << "Connection: close\r\n\r\n"
                         << msg;
-                    response = oss.str();
+                    c->setHeaderBuffer(oss.str());
+                    c->setFinished(true);
                 }
 
-                // --- Send response ---
-                send(fd, response.c_str(), response.length(), 0);
+                c->setHeadersSent(true);
+            }
 
-                // --- Close client ---
+            // 2️⃣ Send headers
+            if (!c->getHeaderBuffer().empty() && FD_ISSET(fd, &writefds))
+            {
+                int n = send(fd, c->getHeaderBuffer().c_str(), c->getHeaderBuffer().length(), 0);
+                if (n > 0)
+                    c->setHeaderBuffer(c->getHeaderBuffer().substr(n));
+            }
+
+            // 3️⃣ Send file in chunks
+            if (c->getFile() && FD_ISSET(fd, &writefds))
+            {
+                const size_t CHUNK_SIZE = 1024;
+                char buf[CHUNK_SIZE];
+                c->getFile()->read(buf, CHUNK_SIZE);
+                std::streamsize n = c->getFile()->gcount();
+                if (n > 0)
+                    send(fd, buf, n, 0);
+
+                if (c->getFile()->eof())
+                {
+                    c->getFile()->close();
+                    delete c->getFile();
+                    c->setFile(NULL);
+                    c->setFinished(true);
+                }
+            }
+
+            // 4️⃣ Close finished clients
+            if (c->isFinished() && c->getHeaderBuffer().empty() && !c->getFile())
+            {
                 close(fd);
+                delete c;
                 clients.erase(clients.begin() + i);
                 continue;
             }
+
             ++i;
         }
     }
 }
+
+// void Server::run() //old serve the whole file once
+// {
+//     fd_set readfds;
+
+//     while (1)
+//     {
+//         FD_ZERO(&readfds);
+
+//         // Add listening socket
+//         FD_SET(listenFd, &readfds);
+//         int maxFd = listenFd;
+
+//         // Add all client sockets
+//         for (size_t i = 0; i < this->clients.size(); ++i)
+//         {
+//             FD_SET(this->clients[i], &readfds);
+//             if (this->clients[i] > maxFd)
+//                 maxFd = this->clients[i];
+//         }
+
+//         // Wait for activity
+//         int activity = select(maxFd + 1, &readfds, NULL, NULL, NULL);
+//         if (activity < 0)
+//         {
+//             std::cerr << "select() error\n";
+//             continue;
+//         }
+
+//         // New connection
+//         if (FD_ISSET(listenFd, &readfds))
+//         {
+//             int newClient = accept(listenFd, NULL, NULL);
+//             if (newClient >= 0)
+//             {
+//                 this->clients.push_back(newClient);
+//                 std::cout << "New client connected: " << newClient << std::endl;
+//             }
+//         }
+
+//         // Check existing this->clients
+//         for (size_t i = 0; i < this->clients.size(); )
+//         {
+//             int fd = this->clients[i];
+//             if (FD_ISSET(fd, &readfds))
+//             {
+//                 char buffer[4096];
+//                 std::string request;
+
+//                 while (request.find("\r\n\r\n") == std::string::npos)
+//                 {
+//                     int r = recv(fd, buffer, sizeof(buffer) - 1, 0);
+//                     if (r <= 0)
+//                         break;
+//                     buffer[r] = '\0';
+//                     request += buffer;
+//                 }
+                
+//                 if (request.empty())
+//                 {
+//                     // Client disconnected
+//                     std::cout << "Client disconnected: " << fd << std::endl;
+//                     close(fd);
+//                     clients.erase(clients.begin() + i);
+//                     continue;
+//                 }
+
+//                 std::string urlPath = extractPath(request);
+//                 std::cout << "\nClient " << fd << " requested: " << urlPath << std::endl;
+//                 std::string fullPath = resolvePath(urlPath);
+//                 std::string body;
+//                 std::string response;
+
+//                 struct stat st;
+//                 if (!fullPath.empty() && stat(fullPath.c_str(), &st) == 0 && !S_ISDIR(st.st_mode))
+//                 {
+//                     // Read file
+//                     std::ifstream file(fullPath.c_str(), std::ios::in | std::ios::binary);
+//                     if (file)
+//                     {
+//                         std::ostringstream ss;
+//                         ss << file.rdbuf();
+//                         body = ss.str();
+//                         // Build 200 OK response
+//                         std::ostringstream oss;
+//                         oss << "HTTP/1.1 200 OK\r\n"
+//                             << "Content-Length: " << body.length() << "\r\n"
+//                             << "Content-Type: text/html\r\n"
+//                             << "Connection: close\r\n"
+//                             << "\r\n"
+//                             << body;
+//                         response = oss.str();
+//                     }
+//                     else
+//                         response = "HTTP/1.1 500 Internal Server Error\r\nContent-Length:0\r\n\r\n"; // File exists but cannot open (rare)
+//                 }
+//                 else
+//                 {
+//                     // 404 Not Found
+//                     std::string msg = "<h1>404 Not Found</h1>";
+//                     std::ostringstream oss;
+//                     oss << "HTTP/1.1 404 Not Found\r\n"
+//                         << "Content-Length: " << msg.length() << "\r\n"
+//                         << "Content-Type: text/html\r\n"
+//                         << "Connection: close\r\n"
+//                         << "\r\n"
+//                         << msg;
+//                     response = oss.str();
+//                 }
+
+//                 // --- Send response ---
+//                 send(fd, response.c_str(), response.length(), 0);
+
+//                 // --- Close client ---
+//                 close(fd);
+//                 clients.erase(clients.begin() + i);
+//                 continue;
+//             }
+//             ++i;
+//         }
+//     }
+// }
 
 std::string Server::resolvePath(const std::string &path)
 {
