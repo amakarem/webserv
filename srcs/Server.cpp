@@ -6,11 +6,12 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/09 18:32:26 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/01/24 18:56:00 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/01/24 19:41:52 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Server.hpp"
+#include "HttpRequest.hpp"
 
 static std::string trim(const std::string &s)
 {
@@ -198,34 +199,145 @@ void Server::run()
             if (FD_ISSET(fd, &readfds))
             {
                 char buffer[4096];
-                int bytesRead = recv(fd, buffer, sizeof(buffer) - 1, 0);
+                std::string request;
 
-                if (bytesRead <= 0)
+                while (request.find("\r\n\r\n") == std::string::npos)
+                {
+                    int r = recv(fd, buffer, sizeof(buffer) - 1, 0);
+                    if (r <= 0)
+                        break;
+                    buffer[r] = '\0';
+                    request += buffer;
+                }
+                
+                if (request.empty())
                 {
                     // Client disconnected
                     std::cout << "Client disconnected: " << fd << std::endl;
                     close(fd);
-                    this->clients.erase(this->clients.begin() + i);
-                    continue; // skip increment
+                    clients.erase(clients.begin() + i);
+                    continue;
+                }
+
+                std::string urlPath = extractPath(request);
+                std::cout << "\nClient " << fd << " requested: " << urlPath << std::endl;
+                std::string fullPath = resolvePath(urlPath);
+                std::string body;
+                std::string response;
+
+                struct stat st;
+                if (!fullPath.empty() && stat(fullPath.c_str(), &st) == 0 && !S_ISDIR(st.st_mode))
+                {
+                    // Read file
+                    std::ifstream file(fullPath.c_str(), std::ios::in | std::ios::binary);
+                    if (file)
+                    {
+                        std::ostringstream ss;
+                        ss << file.rdbuf();
+                        body = ss.str();
+                        // Build 200 OK response
+                        std::ostringstream oss;
+                        oss << "HTTP/1.1 200 OK\r\n"
+                            << "Content-Length: " << body.length() << "\r\n"
+                            << "Content-Type: text/html\r\n"
+                            << "Connection: close\r\n"
+                            << "\r\n"
+                            << body;
+                        response = oss.str();
+                    }
+                    else
+                    {
+                        // File exists but cannot open (rare)
+                        response = "HTTP/1.1 500 Internal Server Error\r\nContent-Length:0\r\n\r\n";
+                    }
                 }
                 else
                 {
-                    buffer[bytesRead] = '\0';
-                    std::cout << "Received from client " << fd << ":\n" << buffer << std::endl;
-
-                    // Minimal fixed response
-                    const char *response =
-                        "HTTP/1.1 200 OK\r\n"
-                        "Content-Length: 34\r\n"
-                        "Content-Type: text/plain\r\n"
-                        "\r\n"
-                        "Hello, world! my server is working";
-                    send(fd, response, strlen(response), 0);
+                    // 404 Not Found
+                    std::string msg = "<h1>404 Not Found</h1>";
+                    std::ostringstream oss;
+                    oss << "HTTP/1.1 404 Not Found\r\n"
+                        << "Content-Length: " << msg.length() << "\r\n"
+                        << "Content-Type: text/html\r\n"
+                        << "Connection: close\r\n"
+                        << "\r\n"
+                        << msg;
+                    response = oss.str();
                 }
+
+                // --- Send response ---
+                send(fd, response.c_str(), response.length(), 0);
+
+                // --- Close client ---
+                close(fd);
+                clients.erase(clients.begin() + i);
+                continue;
+
+                // } else {
+                //                         // Minimal fixed response
+                //     const char *response =
+                //         "HTTP/1.1 200 OK\r\n"
+                //         "Content-Length: 34\r\n"
+                //         "Content-Type: text/plain\r\n"
+                //         "\r\n"
+                //         "Hello, world! my server is working";
+                //     send(fd, response, strlen(response), 0);
+                // }
+
+
+                // // int bytesRead = recv(fd, buffer, sizeof(buffer) - 1, 0);
+
+                // // if (bytesRead <= 0)
+                // // {
+                // //     // Client disconnected
+                // //     std::cout << "Client disconnected: " << fd << std::endl;
+                // //     close(fd);
+                // //     this->clients.erase(this->clients.begin() + i);
+                // //     continue; // skip increment
+                // // }
+                // // else
+                // // {
+                // //     buffer[bytesRead] = '\0';
+                // //     std::cout << "Received from client " << fd << ":\n" << buffer << std::endl;
+
+                // //     // Minimal fixed response
+                // //     const char *response =
+                // //         "HTTP/1.1 200 OK\r\n"
+                // //         "Content-Length: 34\r\n"
+                // //         "Content-Type: text/plain\r\n"
+                // //         "\r\n"
+                // //         "Hello, world! my server is working";
+                // //     send(fd, response, strlen(response), 0);
+                // // }
             }
             ++i;
         }
     }
+}
+
+std::string Server::resolvePath(const std::string &path)
+{
+    // 1️⃣ Prevent empty paths
+    if (path.empty())
+        return "";
+
+    // 2️⃣ Prevent directory traversal
+    if (path.find("..") != std::string::npos)
+        return "";
+
+    // 3️⃣ Always start with /
+    std::string safePath = path;
+    if (safePath[0] != '/')
+        safePath = "/" + safePath;
+
+    // 4️⃣ Map "/" to index
+    if (safePath == "/")
+        safePath = "/" + index;
+
+    // 5️⃣ Combine with root directory
+    std::string fullPath = rootdir + safePath;
+
+    return fullPath;
 }
 
 const char *Server::openFileError::what() const throw()
