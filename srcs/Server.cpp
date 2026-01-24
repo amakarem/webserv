@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/09 18:32:26 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/01/24 19:41:52 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/01/24 20:14:06 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -246,10 +246,7 @@ void Server::run()
                         response = oss.str();
                     }
                     else
-                    {
-                        // File exists but cannot open (rare)
-                        response = "HTTP/1.1 500 Internal Server Error\r\nContent-Length:0\r\n\r\n";
-                    }
+                        response = "HTTP/1.1 500 Internal Server Error\r\nContent-Length:0\r\n\r\n"; // File exists but cannot open (rare)
                 }
                 else
                 {
@@ -272,43 +269,6 @@ void Server::run()
                 close(fd);
                 clients.erase(clients.begin() + i);
                 continue;
-
-                // } else {
-                //                         // Minimal fixed response
-                //     const char *response =
-                //         "HTTP/1.1 200 OK\r\n"
-                //         "Content-Length: 34\r\n"
-                //         "Content-Type: text/plain\r\n"
-                //         "\r\n"
-                //         "Hello, world! my server is working";
-                //     send(fd, response, strlen(response), 0);
-                // }
-
-
-                // // int bytesRead = recv(fd, buffer, sizeof(buffer) - 1, 0);
-
-                // // if (bytesRead <= 0)
-                // // {
-                // //     // Client disconnected
-                // //     std::cout << "Client disconnected: " << fd << std::endl;
-                // //     close(fd);
-                // //     this->clients.erase(this->clients.begin() + i);
-                // //     continue; // skip increment
-                // // }
-                // // else
-                // // {
-                // //     buffer[bytesRead] = '\0';
-                // //     std::cout << "Received from client " << fd << ":\n" << buffer << std::endl;
-
-                // //     // Minimal fixed response
-                // //     const char *response =
-                // //         "HTTP/1.1 200 OK\r\n"
-                // //         "Content-Length: 34\r\n"
-                // //         "Content-Type: text/plain\r\n"
-                // //         "\r\n"
-                // //         "Hello, world! my server is working";
-                // //     send(fd, response, strlen(response), 0);
-                // // }
             }
             ++i;
         }
@@ -317,26 +277,21 @@ void Server::run()
 
 std::string Server::resolvePath(const std::string &path)
 {
-    // 1️⃣ Prevent empty paths
+    // Prevent empty paths
     if (path.empty())
         return "";
-
-    // 2️⃣ Prevent directory traversal
+    // Prevent directory traversal
     if (path.find("..") != std::string::npos)
         return "";
-
-    // 3️⃣ Always start with /
+    // Always start with /
     std::string safePath = path;
     if (safePath[0] != '/')
         safePath = "/" + safePath;
-
-    // 4️⃣ Map "/" to index
+    // Map "/" to index
     if (safePath == "/")
         safePath = "/" + index;
-
-    // 5️⃣ Combine with root directory
+    // Combine with root directory
     std::string fullPath = rootdir + safePath;
-
     return fullPath;
 }
 
