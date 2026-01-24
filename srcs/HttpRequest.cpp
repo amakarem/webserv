@@ -6,31 +6,48 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/24 20:40:32 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/01/24 21:33:38 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/01/24 22:34:25 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "HttpRequest.hpp"
 
-std::string HttpRequest::extractPath(const std::string &request)
+HttpRequest::HttpRequest(const std::string &request)
 {
     std::istringstream iss(request);
-    std::string method;
-    std::string path;
-    std::string version;
+    iss >> this->method >> this->path >> this->version;
 
-    if (!(iss >> method >> path >> version))
-        return ""; // invalid request
-
-    return path; // only the requested URL path
+    if (this->method.empty() || this->path.empty() || this->version.empty())
+    {
+        this->method = "";
+        this->path = "";
+        this->version = "";
+    }
 }
 
-std::string HttpRequest::getMimeType(const std::string &path)
+HttpRequest::~HttpRequest(){};
+
+std::string HttpRequest::getPath()
 {
-    size_t dot = path.rfind('.');
+    return this->path;
+}
+
+std::string HttpRequest::getMethod()
+{
+    return this->method;
+}
+
+std::string HttpRequest::getVersion()
+{
+    return this->version;
+}
+
+std::string HttpRequest::getMimeType()
+{
+    size_t dot = this->path.rfind('.');
     if (dot == std::string::npos)
-        return "text/plain"; // default
-    std::string ext = path.substr(dot + 1);
+        return "text/html"; // default
+    std::string ext = this->path.substr(dot + 1);
     if (ext == "html" || ext == "htm") return "text/html";
     if (ext == "css") return "text/css";
     if (ext == "js") return "application/javascript";
@@ -51,7 +68,8 @@ std::string HttpRequest::buildHttpResponse(const std::string &body, bool ok, siz
 
     if (ok)
     {
-        std::string mime = (path.empty() ? "text/html" : getMimeType(path));
+        std::cout << "the path is " << this->path << "\n\n";
+        std::string mime = (this->path.empty() ? "text/html" : getMimeType());
         oss << "HTTP/1.1 200 OK\r\n";
         if (fileSize > 0)
             oss << "Content-Length: " << fileSize << "\r\n"; // for large files

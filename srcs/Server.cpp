@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/09 18:32:26 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/01/24 22:04:53 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/01/24 22:31:32 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -221,7 +221,6 @@ void Server::run()
             if (!c->isHeadersSent() && FD_ISSET(fd, &readfds))
             {
                 char buffer[1024];
-                HttpRequest r;
                 int bytesRead = recv(fd, buffer, sizeof(buffer)-1, 0);
 
                 if (bytesRead <= 0)
@@ -231,7 +230,8 @@ void Server::run()
                 }
 
                 std::string request(buffer, bytesRead);
-                std::string urlPath = r.extractPath(request);
+                HttpRequest r(request);
+                std::string urlPath = r.getPath();
                 std::string fullPath = resolvePath(urlPath);
 
                 struct stat st;
