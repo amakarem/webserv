@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/09 18:32:26 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/01/24 21:26:37 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/01/24 22:04:53 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -180,7 +180,7 @@ void Server::run()
         }
 
         // Wait for activity
-        int activity = select(maxFd + 1, &readfds, NULL, NULL, NULL);
+        int activity = select(maxFd + 1, &readfds, &writefds, NULL, NULL);
         if (activity < 0)
         {
             std::cerr << "select() error\n";
@@ -226,16 +226,11 @@ void Server::run()
 
                 if (bytesRead <= 0)
                 {
-                    std::cout << "Client disconnected: " << fd << std::endl;
-                    if (c->getFile()) { c->getFile()->close(); delete c->getFile(); }
-                    close(fd);
-                    delete c;
-                    clients.erase(clients.begin() + i);
+                    disconnectClient(i);
                     continue;
                 }
 
-                buffer[bytesRead] = '\0';
-                std::string request(buffer);
+                std::string request(buffer, bytesRead);
                 std::string urlPath = r.extractPath(request);
                 std::string fullPath = resolvePath(urlPath);
 
@@ -263,6 +258,10 @@ void Server::run()
                 int n = send(fd, c->getHeaderBuffer().c_str(), c->getHeaderBuffer().length(), 0);
                 if (n > 0)
                     c->setHeaderBuffer(c->getHeaderBuffer().substr(n));
+                else {
+                    disconnectClient(i);
+                    continue;
+                }
             }
 
             // 3️⃣ Send file in chunks
@@ -274,6 +273,10 @@ void Server::run()
                 std::streamsize n = c->getFile()->gcount();
                 if (n > 0)
                     send(fd, buf, n, 0);
+                else {
+                    disconnectClient(i);
+                    continue;
+                }
 
                 if (c->getFile()->eof())
                 {
@@ -287,9 +290,7 @@ void Server::run()
             // 4️⃣ Close finished clients
             if (c->isFinished() && c->getHeaderBuffer().empty() && !c->getFile())
             {
-                close(fd);
-                delete c;
-                clients.erase(clients.begin() + i);
+                disconnectClient(i);
                 continue;
             }
 
@@ -439,6 +440,36 @@ std::string Server::resolvePath(const std::string &path)
     std::string fullPath = rootdir + safePath;
     return fullPath;
 }
+
+void Server::disconnectClient(size_t index)
+{
+    if (index >= clients.size())
+        return;
+
+    Client* c = clients[index];
+    int fd = c->getFd();
+
+    std::cout << "Client "<< fd << " disconnected: " << fd << std::endl;
+
+    // Close file if open
+    if (c->getFile())
+    {
+        c->getFile()->close();
+        delete c->getFile();
+        c->setFile(NULL);
+    }
+
+    // Close socket
+    if (fd >= 0)
+        close(fd);
+
+    // Delete client object
+    delete c;
+
+    // Remove from vector
+    clients.erase(clients.begin() + index);
+}
+
 
 const char *Server::openFileError::what() const throw()
 {

@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/09 18:42:01 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/01/24 21:21:34 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/01/24 22:01:57 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -49,6 +49,7 @@ class Server
         void startListening();
         void run();
         std::string resolvePath(const std::string &path);
+        void disconnectClient(size_t index);
         
         class openFileError : public std::exception
         {
