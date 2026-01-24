@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/09 18:32:26 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/01/17 18:24:17 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/01/24 18:56:00 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,7 +21,9 @@ static std::string trim(const std::string &s)
     return s.substr(start, end - start + 1);
 }
 
-Server::Server() {}
+Server::Server() {
+    this->port = 8080;
+}
 
 void Server::setdefaultConf()
 {
@@ -77,7 +79,7 @@ void Server::setConfig(char const *filename)
     {
         std::string trimmed = trim(line);
         if (trimmed.empty() || trimmed[0] == '#')
-            return;
+            continue;;
 
         std::string key, value;
         size_t sep = trimmed.find(' ');
@@ -103,13 +105,16 @@ void Server::setConfig(char const *filename)
         }
     }
     file.close();
-    validateConfig();
 }
 
 void Server::validateConfig()
 {
+
     if (this->port <= 0 || this->port > 65535)
+    {
+        std::cerr << "Error: port " << this->port << " not valid\n";
         throw invalidPort();
+    }
     if (this->rootdir.empty())
     {
         std::cerr << "Error: root directory not set in config";
