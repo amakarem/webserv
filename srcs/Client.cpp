@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/24 20:41:35 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/01/30 19:00:19 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/01/30 19:21:04 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -51,6 +51,8 @@ int Client::readRequest(const std::string &rootDir, const std::string &index)
 {
     char buffer[1024];
     int bytesRead = recv(fd, buffer, sizeof(buffer), 0);
+    std::vector<std::string> defaultIndexes = {"index.html", "index.htm", "default.html", "default.htm"};
+    
     if (bytesRead == 0)
         return (1);
     else if (bytesRead < 0)
@@ -62,6 +64,19 @@ int Client::readRequest(const std::string &rootDir, const std::string &index)
     std::string fullPath = resolvePath(rootDir, index, urlPath);
 
     struct stat st;
+    if (stat(fullPath.c_str(), &st) == 0 && S_ISDIR(st.st_mode))//to handle different defualt indexs
+    {
+        std::string tryPath = fullPath + index;
+        for (size_t i = 0; i < defaultIndexes.size(); ++i)
+        {
+            std::string tryPath = fullPath + "/" + defaultIndexes[i];
+            if (stat(tryPath.c_str(), &st) == 0 && !S_ISDIR(st.st_mode))
+            {
+                fullPath = tryPath;
+                break;
+            }
+        }
+    }
     if (!fullPath.empty() && stat(fullPath.c_str(), &st) == 0 && !S_ISDIR(st.st_mode))
     {
         this->setFile(new std::ifstream(fullPath.c_str(), std::ios::in | std::ios::binary));

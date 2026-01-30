@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/24 20:38:20 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/01/30 19:00:26 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/01/30 19:16:21 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,6 +20,7 @@
 #include <sys/socket.h>
 #include <sys/epoll.h>
 #include <errno.h>
+#include <vector>
 #include "HttpRequest.hpp"
 
 class Client
