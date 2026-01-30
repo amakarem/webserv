@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/24 20:40:32 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/01/24 22:35:27 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/01/30 17:51:25 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,7 +25,7 @@ HttpRequest::HttpRequest(const std::string &request)
     }
 }
 
-HttpRequest::~HttpRequest(){};
+HttpRequest::~HttpRequest() {};
 
 std::string HttpRequest::getPath()
 {
@@ -48,16 +48,26 @@ std::string HttpRequest::getMimeType()
     if (dot == std::string::npos)
         return "text/html"; // default
     std::string ext = this->path.substr(dot + 1);
-    if (ext == "html" || ext == "htm") return "text/html";
-    if (ext == "css") return "text/css";
-    if (ext == "js") return "application/javascript";
-    if (ext == "json") return "application/json";
-    if (ext == "png") return "image/png";
-    if (ext == "jpg" || ext == "jpeg") return "image/jpeg";
-    if (ext == "gif") return "image/gif";
-    if (ext == "svg") return "image/svg+xml";
-    if (ext == "txt") return "text/plain";
-    if (ext == "ico") return "image/x-icon";
+    if (ext == "html" || ext == "htm")
+        return "text/html";
+    if (ext == "css")
+        return "text/css";
+    if (ext == "js")
+        return "application/javascript";
+    if (ext == "json")
+        return "application/json";
+    if (ext == "png")
+        return "image/png";
+    if (ext == "jpg" || ext == "jpeg")
+        return "image/jpeg";
+    if (ext == "gif")
+        return "image/gif";
+    if (ext == "svg")
+        return "image/svg+xml";
+    if (ext == "txt")
+        return "text/plain";
+    if (ext == "ico")
+        return "image/x-icon";
 
     return "application/octet-stream"; // fallback for unknown types
 }

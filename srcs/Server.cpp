@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/09 18:32:26 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/01/24 22:31:32 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/01/30 18:19:39 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,7 +22,8 @@ static std::string trim(const std::string &s)
     return s.substr(start, end - start + 1);
 }
 
-Server::Server() {
+Server::Server()
+{
     this->port = 8080;
 }
 
@@ -67,7 +68,13 @@ Server &Server::operator=(Server const &src)
     return (*this);
 }
 
-Server::~Server() {}
+Server::~Server()
+{
+    if (listenFd >= 0)
+        close(listenFd);
+    if (epollFd >= 0)
+        close(epollFd);
+}
 
 void Server::setConfig(char const *filename)
 {
@@ -80,7 +87,8 @@ void Server::setConfig(char const *filename)
     {
         std::string trimmed = trim(line);
         if (trimmed.empty() || trimmed[0] == '#')
-            continue;;
+            continue;
+        ;
 
         std::string key, value;
         size_t sep = trimmed.find(' ');
@@ -137,96 +145,99 @@ void Server::startListening()
     int opt = 1;
     sockaddr_in addr;
     std::memset(&addr, 0, sizeof(addr));
-    
+
     if (listenFd < 0)
         throw std::runtime_error("socket() failed");
     if (setsockopt(listenFd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
         throw std::runtime_error("setsockopt() failed");
     addr.sin_family = AF_INET;
-    addr.sin_addr.s_addr = INADDR_ANY;     // 0.0.0.0
-    addr.sin_port = htons(port);           // IMPORTANT
+    addr.sin_addr.s_addr = INADDR_ANY; // 0.0.0.0
+    addr.sin_port = htons(port);       // IMPORTANT
 
-    if (bind(listenFd, (sockaddr*)&addr, sizeof(addr)) < 0)
+    if (bind(listenFd, (sockaddr *)&addr, sizeof(addr)) < 0)
         throw std::runtime_error("bind() failed");
     if (listen(listenFd, 128) < 0)
         throw std::runtime_error("listen() failed");
+    epollFd = epoll_create(1);
+    if (epollFd < 0)
+        throw std::runtime_error("epoll_create failed");
+    epoll_event ev;
+    ev.events = EPOLLIN;
+    ev.data.fd = listenFd;
+    if (epoll_ctl(epollFd, EPOLL_CTL_ADD, listenFd, &ev) < 0)
+        throw std::runtime_error("epoll_ctl ADD listenFd failed");
     std::cout << "Server listening on port " << port << std::endl;
 }
 
 void Server::run()
 {
-    fd_set readfds, writefds;
-
     while (1)
     {
-        FD_ZERO(&readfds);
-        FD_ZERO(&writefds);
-
-        // --- Listening socket ---
-        FD_SET(listenFd, &readfds);
-        int maxFd = listenFd;
-
-        // --- Add clients ---
-        for (size_t i = 0; i < clients.size(); ++i)
-        {
-            int fd = clients[i]->getFd();
-            if (fd >= 0)
-            {
-                FD_SET(fd, &readfds);
-                FD_SET(fd, &writefds);
-                if (fd > maxFd)
-                    maxFd = fd;
-            }
-        }
-
         // Wait for activity
-        int activity = select(maxFd + 1, &readfds, &writefds, NULL, NULL);
-        if (activity < 0)
+        epoll_event events[64];
+        int nfds = epoll_wait(epollFd, events, 64, -1);
+        if (nfds < 0)
         {
-            std::cerr << "select() error\n";
+            std::cerr << "epoll_wait() error\n";
             continue;
         }
 
-        // --- Accept new client ---
-        if (FD_ISSET(listenFd, &readfds))
+        // --- Handle clients ---
+        for (int i = 0; i < nfds; ++i)
         {
-            int newFd = accept(listenFd, NULL, NULL);
-            if (newFd >= 0)
-            {
-                Client* c = new Client();
-                c->setFd(newFd);
-                c->setHeadersSent(false);
-                c->setFinished(false);
-                c->setFile(NULL);
-                clients.push_back(c);
-                std::cout << "New client connected: " << newFd << std::endl;
-            }
-        }
+            int fd = events[i].data.fd;
 
-        // --- Handle existing clients ---
-        for (size_t i = 0; i < clients.size(); )
-        {
-            Client* c = clients[i];
-            int fd = c->getFd();
-
-            // Skip invalid FDs
-            if (fd < 0)
+            // --- New connection ---
+            if (fd == listenFd)
             {
-                clients.erase(clients.begin() + i);
-                delete c;
+                int newFd = accept(listenFd, NULL, NULL);
+                if (newFd >= 0)
+                {
+                    // Make new socket non-blocking
+                    fcntl(newFd, F_SETFL, O_NONBLOCK);
+
+                    Client *c = new Client();
+                    c->setFd(newFd);
+                    c->setHeadersSent(false);
+                    c->setFinished(false);
+                    c->setFile(NULL);
+
+                    // Add to epoll
+                    struct epoll_event ev;
+                    ev.events = EPOLLIN | EPOLLET; // read, edge-triggered
+                    ev.data.fd = newFd;
+                    epoll_ctl(epollFd, EPOLL_CTL_ADD, newFd, &ev);
+
+                    clients.push_back(c);
+                    std::cout << "New client connected: " << newFd << std::endl;
+                }
                 continue;
             }
 
-            // 1️⃣ Read request
-            if (!c->isHeadersSent() && FD_ISSET(fd, &readfds))
+            // --- Existing client ---
+            Client *c = nullptr;
+            for (auto cl : clients)
+            {
+                if (cl->getFd() == fd)
+                {
+                    c = cl;
+                    break;
+                }
+            }
+            if (!c)
+                break;
+
+            // --- Read request ---
+            if (!c->isHeadersSent() && (events[i].events & EPOLLIN))
             {
                 char buffer[1024];
-                int bytesRead = recv(fd, buffer, sizeof(buffer)-1, 0);
-
-                if (bytesRead <= 0)
+                int bytesRead = recv(fd, buffer, sizeof(buffer), 0);
+                if (bytesRead == 0)
+                    break;
+                else if (bytesRead < 0)
                 {
-                    disconnectClient(i);
-                    continue;
+                    disconnectClient(c); // close, remove, delete
+                    break;
                 }
 
                 std::string request(buffer, bytesRead);
@@ -243,58 +254,30 @@ void Server::run()
                 }
                 else
                 {
-                    // 404
                     std::string headers = r.buildHttpResponse("<h1>404 Not Found</h1>", false);
                     c->setHeaderBuffer(headers);
                     c->setFinished(true);
                 }
 
                 c->setHeadersSent(true);
+
+                // Enable writing events
+                struct epoll_event ev;
+                ev.events = EPOLLOUT | EPOLLET;
+                ev.data.fd = fd;
+                epoll_ctl(epollFd, EPOLL_CTL_MOD, fd, &ev);
             }
 
-            // 2️⃣ Send headers
-            if (!c->getHeaderBuffer().empty() && FD_ISSET(fd, &writefds))
+            // --- Send headers and file ---
+            if ((events[i].events & EPOLLOUT))
             {
-                int n = send(fd, c->getHeaderBuffer().c_str(), c->getHeaderBuffer().length(), 0);
-                if (n > 0)
-                    c->setHeaderBuffer(c->getHeaderBuffer().substr(n));
-                else {
-                    disconnectClient(i);
+                int respStatus = c->sendResponse();
+                if (respStatus == 0)
                     continue;
-                }
+                else if (respStatus == 2)
+                    disconnectClient(c);
+                break;
             }
-
-            // 3️⃣ Send file in chunks
-            if (c->getFile() && FD_ISSET(fd, &writefds))
-            {
-                const size_t CHUNK_SIZE = 1024;
-                char buf[CHUNK_SIZE];
-                c->getFile()->read(buf, CHUNK_SIZE);
-                std::streamsize n = c->getFile()->gcount();
-                if (n > 0)
-                    send(fd, buf, n, 0);
-                else {
-                    disconnectClient(i);
-                    continue;
-                }
-
-                if (c->getFile()->eof())
-                {
-                    c->getFile()->close();
-                    delete c->getFile();
-                    c->setFile(NULL);
-                    c->setFinished(true);
-                }
-            }
-
-            // 4️⃣ Close finished clients
-            if (c->isFinished() && c->getHeaderBuffer().empty() && !c->getFile())
-            {
-                disconnectClient(i);
-                continue;
-            }
-
-            ++i;
         }
     }
 }
@@ -355,7 +338,7 @@ void Server::run()
 //                     buffer[r] = '\0';
 //                     request += buffer;
 //                 }
-                
+
 //                 if (request.empty())
 //                 {
 //                     // Client disconnected
@@ -441,35 +424,49 @@ std::string Server::resolvePath(const std::string &path)
     return fullPath;
 }
 
-void Server::disconnectClient(size_t index)
+void Server::disconnectClient(Client *c)
 {
-    if (index >= clients.size())
-        return;
 
-    Client* c = clients[index];
+  if (!c) return;
+
     int fd = c->getFd();
 
-    std::cout << "Client "<< fd << " disconnected: " << fd << std::endl;
-
-    // Close file if open
-    if (c->getFile())
-    {
-        c->getFile()->close();
-        delete c->getFile();
-        c->setFile(NULL);
-    }
+    // Remove from epoll
+    if (fd >= 0)
+        epoll_ctl(epollFd, EPOLL_CTL_DEL, fd, NULL);
 
     // Close socket
     if (fd >= 0)
         close(fd);
 
-    // Delete client object
-    delete c;
+    // Close file if open
+    if (c->getFile())
+    {
+        if (c->getFile()->is_open())
+            c->getFile()->close();
+        delete c->getFile();
+        c->setFile(nullptr);
+    }
 
-    // Remove from vector
-    clients.erase(clients.begin() + index);
+    // Remove from clients vector
+    for (auto it = clients.begin(); it != clients.end(); ++it)
+    {
+        if (*it == c)
+        {
+            clients.erase(it);
+            break;
+        }
+    }
+
+    delete c;
+    std::cout << "Client " << fd << " disconnected: " << fd << std::endl;
 }
 
+void Server::setNonBlocking(int fd)
+{
+    int flags = fcntl(fd, F_GETFL, 0);
+    fcntl(fd, F_SETFL, flags | O_NONBLOCK);
+}
 
 const char *Server::openFileError::what() const throw()
 {

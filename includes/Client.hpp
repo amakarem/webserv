@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/24 20:38:20 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/01/24 20:47:36 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/01/30 18:17:27 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,6 +16,11 @@
 #include <fstream>
 #include <string>
 #include <unistd.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <sys/epoll.h>
+#include <errno.h>
+
 
 class Client
 {
@@ -43,5 +48,7 @@ class Client
 
         void setFinished(bool val);
         bool isFinished() const;
+
+        int sendResponse();
 };
 #endif

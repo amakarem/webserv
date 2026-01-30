@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/09 18:42:01 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/01/24 22:01:57 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/01/30 18:09:02 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,6 +25,8 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <cstring>
+#include <sys/epoll.h>
+#include <fcntl.h>
 #include "Client.hpp"
 
 class Server
@@ -33,6 +35,7 @@ class Server
         // std::vector<int> clients;
         std::vector<Client *> clients;
         int listenFd;
+        int epollFd;
         int port;
         std::string rootdir;
         std::string index;
@@ -49,7 +52,8 @@ class Server
         void startListening();
         void run();
         std::string resolvePath(const std::string &path);
-        void disconnectClient(size_t index);
+        void disconnectClient(Client *c);
+        void setNonBlocking(int fd);
         
         class openFileError : public std::exception
         {
