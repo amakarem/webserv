@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/09 18:32:26 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/01/30 18:56:36 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/01/30 19:49:30 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -198,7 +198,7 @@ void Server::run()
                     fcntl(newFd, F_SETFL, O_NONBLOCK);
 
                     Client *c = new Client(newFd);
-                    
+
                     // Add to epoll
                     struct epoll_event ev;
                     ev.events = EPOLLIN | EPOLLET; // read, edge-triggered
@@ -228,7 +228,7 @@ void Server::run()
             if (!c->isHeadersSent() && (events[i].events & EPOLLIN))
             {
                 int rStat = c->readRequest(this->rootdir, this->index);
-                if (rStat == 2) 
+                if (rStat == 2)
                     disconnectClient(c);
                 if (rStat > 0)
                     break;
@@ -243,7 +243,7 @@ void Server::run()
             if ((events[i].events & EPOLLOUT))
             {
                 int rStat = c->sendResponse();
-                if (rStat == 2) 
+                if (rStat == 2)
                     disconnectClient(c);
                 if (rStat > 0)
                     break;
@@ -374,11 +374,11 @@ void Server::run()
 //     }
 // }
 
-
 void Server::disconnectClient(Client *c)
 {
 
-  if (!c) return;
+    if (!c || c->isKeepAlive())
+        return;
 
     int fd = c->getFd();
 

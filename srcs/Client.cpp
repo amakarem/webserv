@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/24 20:41:35 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/01/30 19:21:04 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/01/30 19:47:36 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,6 +18,7 @@ Client::Client(int _fd)
     this->file = NULL;
     this->headersSent = false;
     this->finished = false;
+    this->keepAlive = false;
 }
 Client::~Client()
 {
@@ -32,6 +33,9 @@ Client::~Client()
 }
 
 int Client::getFd() const { return fd; }
+
+void Client::setkeepAlive(bool val) { keepAlive = val; }
+bool Client::isKeepAlive() const { return keepAlive; }
 
 void Client::setFile(std::ifstream *f) { file = f; }
 std::ifstream *Client::getFile() const { return file; }
@@ -63,6 +67,7 @@ int Client::readRequest(const std::string &rootDir, const std::string &index)
     std::string urlPath = r.getPath();
     std::string fullPath = resolvePath(rootDir, index, urlPath);
 
+    this->setkeepAlive(r.isKeepAlive());
     struct stat st;
     if (stat(fullPath.c_str(), &st) == 0 && S_ISDIR(st.st_mode))//to handle different defualt indexs
     {

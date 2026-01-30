@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/24 20:40:32 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/01/30 17:51:25 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/01/30 19:45:07 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,9 +14,23 @@
 
 HttpRequest::HttpRequest(const std::string &request)
 {
+    this->keepAlive = false;
     std::istringstream iss(request);
     iss >> this->method >> this->path >> this->version;
 
+    std::string line;
+    while (std::getline(iss, line) && line != "\r")
+    {
+        if (line.find("Connection:") != std::string::npos)
+        {
+            if (line.find("Keep-Alive") != std::string::npos)
+                this->keepAlive = true;
+        }
+    }
+
+    // HTTP/1.1 defaults to keep-alive if not specified
+    if (version == "HTTP/1.1" && !keepAlive)
+        this->keepAlive = true;
     if (this->method.empty() || this->path.empty() || this->version.empty())
     {
         this->method = "";
@@ -27,19 +41,24 @@ HttpRequest::HttpRequest(const std::string &request)
 
 HttpRequest::~HttpRequest() {};
 
-std::string HttpRequest::getPath()
+std::string HttpRequest::getPath() const
 {
     return this->path;
 }
 
-std::string HttpRequest::getMethod()
+std::string HttpRequest::getMethod() const
 {
     return this->method;
 }
 
-std::string HttpRequest::getVersion()
+std::string HttpRequest::getVersion() const
 {
     return this->version;
+}
+
+bool HttpRequest::isKeepAlive() const
+{
+    return this->keepAlive;
 }
 
 std::string HttpRequest::getMimeType()

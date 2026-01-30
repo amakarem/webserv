@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/24 20:38:20 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/01/30 19:16:21 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/01/30 19:44:01 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,12 +31,16 @@ class Client
         std::string headerBuffer;     // HTTP headers to send
         bool headersSent;             // headers already sent
         bool finished;                // done sending everything
+        bool keepAlive;
 
     public:
         Client(int _fd);
         ~Client();
         int getFd() const;
 
+        void setkeepAlive(bool val);
+        bool isKeepAlive() const;
+        
         void setFile(std::ifstream* f);
         std::ifstream* getFile() const;
 
