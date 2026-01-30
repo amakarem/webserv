@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/24 20:38:20 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/01/30 18:55:23 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/01/30 19:00:26 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -34,7 +34,6 @@ class Client
     public:
         Client(int _fd);
         ~Client();
-        void setFd(int clientFd);
         int getFd() const;
 
         void setFile(std::ifstream* f);

@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/24 20:41:35 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/01/30 18:55:17 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/01/30 19:00:19 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,7 +31,6 @@ Client::~Client()
         close(fd);
 }
 
-void Client::setFd(int clientFd) { fd = clientFd; }
 int Client::getFd() const { return fd; }
 
 void Client::setFile(std::ifstream *f) { file = f; }
