@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/24 20:41:35 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/01/30 18:17:30 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/01/30 18:40:31 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -40,7 +40,39 @@ bool Client::isHeadersSent() const { return headersSent; }
 void Client::setFinished(bool val) { finished = val; }
 bool Client::isFinished() const { return finished; }
 
-//return 0 continue, 1 break, 2 disconnectClient and break
+// return 0 continue, 1 break, 2 disconnectClient and break
+
+int Client::readRequest(const std::string &rootDir, const std::string &index)
+{
+    char buffer[1024];
+    int bytesRead = recv(fd, buffer, sizeof(buffer), 0);
+    if (bytesRead == 0)
+        return (1);
+    else if (bytesRead < 0)
+        return (2);
+
+    std::string request(buffer, bytesRead);
+    HttpRequest r(request);
+    std::string urlPath = r.getPath();
+    std::string fullPath = resolvePath(rootDir, index, urlPath);
+
+    struct stat st;
+    if (!fullPath.empty() && stat(fullPath.c_str(), &st) == 0 && !S_ISDIR(st.st_mode))
+    {
+        this->setFile(new std::ifstream(fullPath.c_str(), std::ios::in | std::ios::binary));
+        std::string headers = r.buildHttpResponse("", true, st.st_size);
+        this->setHeaderBuffer(headers);
+    }
+    else
+    {
+        std::string headers = r.buildHttpResponse("<h1>404 Not Found</h1>", false);
+        this->setHeaderBuffer(headers);
+        this->setFinished(true);
+    }
+    this->setHeadersSent(true);
+    return (0);
+}
+
 int Client::sendResponse()
 {
     int fd = this->getFd();
@@ -94,3 +126,22 @@ int Client::sendResponse()
     return (0);
 }
 
+std::string Client::resolvePath(std::string rootdir, std::string index, const std::string &path)
+{
+    // Prevent empty paths
+    if (path.empty())
+        return "";
+    // Prevent directory traversal
+    if (path.find("..") != std::string::npos)
+        return "";
+    // Always start with /
+    std::string safePath = path;
+    if (safePath[0] != '/')
+        safePath = "/" + safePath;
+    // Map "/" to index
+    if (safePath == "/")
+        safePath = "/" + index;
+    // Combine with root directory
+    std::string fullPath = rootdir + safePath;
+    return fullPath;
+}

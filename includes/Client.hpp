@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/24 20:38:20 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/01/30 18:17:27 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/01/30 18:40:27 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,7 +20,7 @@
 #include <sys/socket.h>
 #include <sys/epoll.h>
 #include <errno.h>
-
+#include "HttpRequest.hpp"
 
 class Client
 {
@@ -49,6 +49,8 @@ class Client
         void setFinished(bool val);
         bool isFinished() const;
 
+        std::string resolvePath(std::string rootdir, std::string index, const std::string &path);
+        int readRequest(const std::string &rootDir, const std::string &index);
         int sendResponse();
 };
 #endif

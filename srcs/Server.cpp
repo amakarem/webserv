@@ -6,12 +6,11 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/09 18:32:26 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/01/30 18:19:39 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/01/30 18:41:51 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Server.hpp"
-#include "HttpRequest.hpp"
 
 static std::string trim(const std::string &s)
 {
@@ -230,37 +229,11 @@ void Server::run()
             // --- Read request ---
             if (!c->isHeadersSent() && (events[i].events & EPOLLIN))
             {
-                char buffer[1024];
-                int bytesRead = recv(fd, buffer, sizeof(buffer), 0);
-                if (bytesRead == 0)
+                int rStat = c->readRequest(this->rootdir, this->index);
+                if (rStat == 2) 
+                    disconnectClient(c);
+                if (rStat > 0)
                     break;
-                else if (bytesRead < 0)
-                {
-                    disconnectClient(c); // close, remove, delete
-                    break;
-                }
-
-                std::string request(buffer, bytesRead);
-                HttpRequest r(request);
-                std::string urlPath = r.getPath();
-                std::string fullPath = resolvePath(urlPath);
-
-                struct stat st;
-                if (!fullPath.empty() && stat(fullPath.c_str(), &st) == 0 && !S_ISDIR(st.st_mode))
-                {
-                    c->setFile(new std::ifstream(fullPath.c_str(), std::ios::in | std::ios::binary));
-                    std::string headers = r.buildHttpResponse("", true, st.st_size);
-                    c->setHeaderBuffer(headers);
-                }
-                else
-                {
-                    std::string headers = r.buildHttpResponse("<h1>404 Not Found</h1>", false);
-                    c->setHeaderBuffer(headers);
-                    c->setFinished(true);
-                }
-
-                c->setHeadersSent(true);
-
                 // Enable writing events
                 struct epoll_event ev;
                 ev.events = EPOLLOUT | EPOLLET;
@@ -271,12 +244,11 @@ void Server::run()
             // --- Send headers and file ---
             if ((events[i].events & EPOLLOUT))
             {
-                int respStatus = c->sendResponse();
-                if (respStatus == 0)
-                    continue;
-                else if (respStatus == 2)
+                int rStat = c->sendResponse();
+                if (rStat == 2) 
                     disconnectClient(c);
-                break;
+                if (rStat > 0)
+                    break;
             }
         }
     }
@@ -404,25 +376,6 @@ void Server::run()
 //     }
 // }
 
-std::string Server::resolvePath(const std::string &path)
-{
-    // Prevent empty paths
-    if (path.empty())
-        return "";
-    // Prevent directory traversal
-    if (path.find("..") != std::string::npos)
-        return "";
-    // Always start with /
-    std::string safePath = path;
-    if (safePath[0] != '/')
-        safePath = "/" + safePath;
-    // Map "/" to index
-    if (safePath == "/")
-        safePath = "/" + index;
-    // Combine with root directory
-    std::string fullPath = rootdir + safePath;
-    return fullPath;
-}
 
 void Server::disconnectClient(Client *c)
 {
