@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/09 18:32:26 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/01/30 19:49:30 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/01/30 19:54:01 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -377,8 +377,8 @@ void Server::run()
 void Server::disconnectClient(Client *c)
 {
 
-    if (!c || c->isKeepAlive())
-        return;
+    // if (!c || c->isKeepAlive())//disabled for now
+    //     return;
 
     int fd = c->getFd();
 

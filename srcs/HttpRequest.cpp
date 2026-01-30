@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/24 20:40:32 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/01/30 19:45:07 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/01/30 19:58:51 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -94,7 +94,9 @@ std::string HttpRequest::getMimeType()
 std::string HttpRequest::buildHttpResponse(const std::string &body, bool ok, size_t fileSize)
 {
     std::ostringstream oss;
-
+    std::string connectionHeader = "close";
+    if (this->keepAlive)
+        connectionHeader = "Keep-Alive: timeout=5";
     if (ok)
     {
         std::cout << "the path is " << this->path << "\n\n";
@@ -105,7 +107,7 @@ std::string HttpRequest::buildHttpResponse(const std::string &body, bool ok, siz
         else
             oss << "Content-Length: " << body.length() << "\r\n"; // small body
         oss << "Content-Type: " << mime << "\r\n";
-        oss << "Connection: close\r\n";
+        oss << "Connection: " << connectionHeader << "\r\n";
         oss << "\r\n";
 
         if (body.length() > 0)
@@ -117,7 +119,7 @@ std::string HttpRequest::buildHttpResponse(const std::string &body, bool ok, siz
         oss << "HTTP/1.1 404 Not Found\r\n";
         oss << "Content-Length: " << msg.length() << "\r\n";
         oss << "Content-Type: text/html\r\n";
-        oss << "Connection: close\r\n";
+        oss << "Connection: " << connectionHeader << "\r\n";
         oss << "\r\n";
         oss << msg;
     }
