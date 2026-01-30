@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/09 18:32:26 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/01/30 18:41:51 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/01/30 18:56:36 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,6 +23,8 @@ static std::string trim(const std::string &s)
 
 Server::Server()
 {
+    this->listenFd = -1;
+    this->epollFd = -1;
     this->port = 8080;
 }
 
@@ -195,12 +197,8 @@ void Server::run()
                     // Make new socket non-blocking
                     fcntl(newFd, F_SETFL, O_NONBLOCK);
 
-                    Client *c = new Client();
-                    c->setFd(newFd);
-                    c->setHeadersSent(false);
-                    c->setFinished(false);
-                    c->setFile(NULL);
-
+                    Client *c = new Client(newFd);
+                    
                     // Add to epoll
                     struct epoll_event ev;
                     ev.events = EPOLLIN | EPOLLET; // read, edge-triggered
@@ -413,12 +411,6 @@ void Server::disconnectClient(Client *c)
 
     delete c;
     std::cout << "Client " << fd << " disconnected: " << fd << std::endl;
-}
-
-void Server::setNonBlocking(int fd)
-{
-    int flags = fcntl(fd, F_GETFL, 0);
-    fcntl(fd, F_SETFL, flags | O_NONBLOCK);
 }
 
 const char *Server::openFileError::what() const throw()

@@ -6,13 +6,19 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/24 20:41:35 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/01/30 18:40:31 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/01/30 18:55:17 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Client.hpp"
 
-Client::Client() : fd(-1), file(NULL), headersSent(false), finished(false) {}
+Client::Client(int _fd)
+{
+    this->fd = _fd;
+    this->file = NULL;
+    this->headersSent = false;
+    this->finished = false;
+}
 Client::~Client()
 {
     if (file)

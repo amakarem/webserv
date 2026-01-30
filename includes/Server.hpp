@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/09 18:42:01 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/01/30 18:09:02 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/01/30 18:58:19 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -53,7 +53,6 @@ class Server
         void run();
         std::string resolvePath(const std::string &path);
         void disconnectClient(Client *c);
-        void setNonBlocking(int fd);
         
         class openFileError : public std::exception
         {

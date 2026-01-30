@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/24 20:38:20 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/01/30 18:40:27 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/01/30 18:55:23 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,7 +32,7 @@ class Client
         bool finished;                // done sending everything
 
     public:
-        Client();
+        Client(int _fd);
         ~Client();
         void setFd(int clientFd);
         int getFd() const;
