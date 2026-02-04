@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/09 18:32:26 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/02/04 23:07:08 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/02/04 23:31:14 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -117,8 +117,7 @@ Server::~Server()
 //     file.close();
 // }
 
-
-void Server::setConfig(const char* filename)
+void Server::setConfig(const char *filename)
 {
     std::ifstream file(filename);
     if (!file.is_open())
@@ -135,14 +134,17 @@ void Server::setConfig(const char* filename)
         if (trimmed.empty() || trimmed[0] == '#')
             continue;
 
-        if (trimmed == "server {") {
+        if (trimmed == "server {")
+        {
             current = ServerConfig(); // start new server block
             inServerBlock = true;
             continue;
         }
 
-        if (trimmed == "}") {
-            if (inServerBlock) {
+        if (trimmed == "}")
+        {
+            if (inServerBlock)
+            {
                 configs.push_back(current); // save finished server block
                 inServerBlock = false;
             }
@@ -154,7 +156,8 @@ void Server::setConfig(const char* filename)
 
         // --- Parse key/value ---
         size_t sep = trimmed.find(' ');
-        if (sep == std::string::npos) {
+        if (sep == std::string::npos)
+        {
             std::cerr << "Invalid config line: " << trimmed << "\n";
             throw KeyError();
         }
@@ -164,27 +167,39 @@ void Server::setConfig(const char* filename)
         if (!value.empty() && value.back() == ';')
             value.pop_back();
 
-        if (key == "listen") {
+        if (key == "listen")
+        {
             // format: ip:port or just port
             size_t colon = value.find(':');
-            if (colon != std::string::npos) {
+            if (colon != std::string::npos)
+            {
                 current.ip = value.substr(0, colon);
                 current.port = std::atoi(value.substr(colon + 1).c_str());
-            } else {
+            }
+            else
+            {
                 current.ip = "0.0.0.0"; // default listen all interfaces
                 current.port = std::atoi(value.c_str());
             }
-        } else if (key == "root") {
+        }
+        else if (key == "root")
+        {
             current.root = value;
-        } else if (key == "index") {
+        }
+        else if (key == "index")
+        {
             current.indexFiles.clear();
             std::istringstream iss(value);
             std::string idx;
             while (iss >> idx)
                 current.indexFiles.push_back(idx);
-        } else if (key == "server_name") {
+        }
+        else if (key == "server_name")
+        {
             current.serverName = value;
-        } else {
+        }
+        else
+        {
             std::cerr << "Invalid config key: " << key << "\n";
             throw KeyError();
         }
@@ -202,24 +217,46 @@ void Server::setConfig(const char* filename)
 void Server::validateConfig()
 {
 
-    if (this->port <= 0 || this->port > 65535)
+    for (std::vector<ServerConfig>::iterator it = serverConfigs.begin();
+         it != serverConfigs.end();)
     {
-        std::cerr << "Error: port " << this->port << " not valid\n";
-        throw invalidPort();
+        bool valid = true;
+        if (it->port <= 0 || it->port > 65535)
+        {
+            std::cerr << "Error: port " << it->port << " not valid\n";
+            valid = false;
+        }
+        if (it->root.empty())
+        {
+            std::cerr << "Error: root directory not set in config";
+            valid = false;
+        }
+        if (it->indexFiles.empty())
+        {
+            std::cerr << "Error: index not set in config";
+            valid = false;
+        }
+
+        if (!valid)
+        {
+            std::cerr << "Removing invalid server config\n\n";
+            it = serverConfigs.erase(it); // ⚠️ returns next iterator
+        }
+        else
+        {
+            std::cout << "Server config OK\n";
+            std::cout << "  Server: " << it->serverName  << "\n";
+            std::cout << "  Port: " << it->port << "\n";
+            std::cout << "  Root: " << it->root << "\n";
+            std::cout << "  Index files: ";
+            for (size_t i = 0; i < it->indexFiles.size(); ++i)
+                std::cout << it->indexFiles[i] << " ";
+            std::cout << "\n\n";
+            ++it;
+        }
     }
-    if (this->rootdir.empty())
-    {
-        std::cerr << "Error: root directory not set in config";
-        throw KeyError();
-    }
-    if (this->index.empty())
-    {
-        std::cerr << "Error: index not set in config";
-        throw KeyError();
-    }
-    std::cout << "Port:" << this->port;
-    std::cout << "\nRoot directory:" << this->rootdir;
-    std::cout << "\nindex file:" << this->index << "\n";
+    if (serverConfigs.size() == 0)
+        throw noValidServer();
 }
 
 void Server::startListening()
@@ -248,7 +285,7 @@ void Server::startListening()
         addr.sin_port = htons(serverConfigs[i].port);
         addr.sin_addr.s_addr = inet_addr(serverConfigs[i].ip.c_str());
 
-        if (bind(listenFd, (sockaddr*)&addr, sizeof(addr)) < 0)
+        if (bind(listenFd, (sockaddr *)&addr, sizeof(addr)) < 0)
             throw std::runtime_error("bind() failed");
 
         if (listen(listenFd, 128) < 0)
@@ -262,12 +299,11 @@ void Server::startListening()
 
         listenSockets.push_back(listenFd);
         listenFdConfig[listenFd] = serverConfigs[i];
-        std::cout << "Server listening on " 
-                  << serverConfigs[i].ip << ":" 
+        std::cout << "Server listening on "
+                  << serverConfigs[i].ip << ":"
                   << serverConfigs[i].port << std::endl;
     }
 }
-
 
 // void Server::startListening()
 // {
@@ -570,4 +606,9 @@ const char *Server::invalidPort::what() const throw()
 const char *Server::KeyError::what() const throw()
 {
     return "\n";
+}
+
+const char *Server::noValidServer::what() const throw()
+{
+    return "Error: No Valid Server in configuration file\n";
 }

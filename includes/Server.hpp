@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/09 18:42:01 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/02/04 23:11:24 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/02/04 23:30:48 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -66,6 +66,11 @@ class Server
                 const char *what() const throw();
         };
         class KeyError : public std::exception
+        {
+            public:
+                const char *what() const throw();
+        };
+        class noValidServer : public std::exception
         {
             public:
                 const char *what() const throw();

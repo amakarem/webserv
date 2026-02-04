@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/09 18:26:46 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/02/04 22:08:16 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/02/04 23:31:25 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,11 +26,9 @@ int main(int argc, char **argv)
             server.setdefaultConf();
         else if (argc == 2)
             server.setConfig(argv[1]);
-        // server.validateConfig();
+        server.validateConfig();
         server.startListening();
         server.run();
-        // while (1)
-        //     ; // temporary (select loop later)
     }
     catch (std::exception &e)
     {
