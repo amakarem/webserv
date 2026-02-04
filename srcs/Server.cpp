@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/09 18:32:26 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/02/04 20:53:28 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/02/04 20:59:00 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -201,7 +201,7 @@ void Server::run()
 
                     // Add to epoll
                     struct epoll_event ev;
-                    ev.events = EPOLLOUT | EPOLLIN | EPOLLET; // read, edge-triggered EPOLLOUT | 
+                    ev.events = EPOLLOUT | EPOLLIN | EPOLLET; // read, edge-triggered EPOLLOUT |
                     ev.data.fd = newFd;
                     epoll_ctl(epollFd, EPOLL_CTL_ADD, newFd, &ev);
 
@@ -223,7 +223,8 @@ void Server::run()
             }
             if (!c)
                 continue;
-            if (c->isTimeout()){
+            if (c->isTimeout())
+            {
                 disconnectClient(c);
                 continue;
             }
@@ -231,7 +232,8 @@ void Server::run()
             // --- Read request ---
             if ((events[i].events & EPOLLIN) && !c->isHeadersSent())
             {
-                if (c->readRequest(this->rootdir, this->index)) {
+                if (c->readRequest(this->rootdir, this->index))
+                {
                     disconnectClient(c);
                     continue;
                 }
@@ -245,7 +247,8 @@ void Server::run()
             // --- Send headers and file ---
             if ((events[i].events & EPOLLOUT))
             {
-                if (c->sendResponse()) {
+                if (c->sendResponse())
+                {
                     disconnectClient(c);
                     continue;
                 }

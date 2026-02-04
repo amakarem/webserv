@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/24 20:41:35 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/02/04 20:53:50 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/02/04 20:59:24 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -53,13 +53,12 @@ bool Client::isFinished() const { return finished; }
 void Client::setlastActivity()
 {
     this->lastActivity = time(NULL);
-    std::cout << "lastActivity:" << this->getlastActivity();
 }
 long Client::getlastActivity() const { return lastActivity; }
 
 bool Client::isTimeout() const
 {
-    std::cout << "timeout:" << time(NULL) - this->getlastActivity();
+    std::cout << "Timeout:" << time(NULL) - this->getlastActivity();
     if (time(NULL) - this->getlastActivity() > 5)
         return (true);
     return (false);
@@ -71,10 +70,10 @@ int Client::readRequest(const std::string &rootDir, const std::string &index)
 {
     char buffer[1024];
     int bytesRead = recv(fd, buffer, sizeof(buffer), 0);
-    
-    if (bytesRead == 0)// Client closed connection
+
+    if (bytesRead == 0) // Client closed connection
         return (1);
-    if (bytesRead < 0)// Error
+    if (bytesRead < 0) // Error
     {
         if (errno == EAGAIN || errno == EWOULDBLOCK)
             return (0); // no data yet, still alive
@@ -178,7 +177,7 @@ std::string Client::resolvePath(std::string rootdir, std::string index, const st
     std::string fullPath = rootdir + safePath;
 
     struct stat st;
-    if (stat(fullPath.c_str(), &st) == 0 && S_ISDIR(st.st_mode))//to handle different defualt indexs
+    if (stat(fullPath.c_str(), &st) == 0 && S_ISDIR(st.st_mode)) // to handle different defualt indexs
     {
         std::string tryPath = fullPath + index;
         for (size_t i = 0; i < defaultIndexes.size(); ++i)
