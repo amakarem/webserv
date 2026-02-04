@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/09 18:42:01 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/02/04 22:22:01 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/02/04 23:11:24 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,10 +15,7 @@
 
 #include <fstream>
 #include <iostream>
-#include <string>
 #include <exception>
-#include <vector>
-#include <map>
 #include <algorithm>
 #include <cctype>
 #include <sys/socket.h>
@@ -29,14 +26,7 @@
 #include <sys/epoll.h>
 #include <fcntl.h>
 #include "Client.hpp"
-
-struct ServerConfig {
-    std::string ip = "0.0.0.0";                 // listen interface
-    int port = 8080;                             // listen port
-    std::string root;                            // root directory
-    std::vector<std::string> indexFiles;         // index files in order
-    std::string serverName;                      // optional server name
-};
+#include "Struct.hpp"
 
 class Server
 {

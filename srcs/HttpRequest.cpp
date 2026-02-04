@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/24 20:40:32 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/01/30 19:58:51 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/02/04 23:13:22 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -99,7 +99,6 @@ std::string HttpRequest::buildHttpResponse(const std::string &body, bool ok, siz
         connectionHeader = "Keep-Alive: timeout=5";
     if (ok)
     {
-        std::cout << "the path is " << this->path << "\n\n";
         std::string mime = (this->path.empty() ? "text/html" : getMimeType());
         oss << "HTTP/1.1 200 OK\r\n";
         if (fileSize > 0)

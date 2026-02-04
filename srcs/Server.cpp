@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/09 18:32:26 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/02/04 22:43:43 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/02/04 23:07:08 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -336,7 +336,7 @@ void Server::run()
                     }
 
                     fcntl(newFd, F_SETFL, O_NONBLOCK);
-                    Client *c = new Client(newFd, listenFdConfig[fd].root, listenFdConfig[fd].indexFiles);
+                    Client *c = new Client(newFd, listenFdConfig[fd]);
 
                     // Add to epoll
                     epoll_event ev;

@@ -6,13 +6,13 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/24 20:41:35 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/02/04 22:47:31 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/02/04 23:19:13 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Client.hpp"
 
-Client::Client(int _fd, std::string _rootDir, std::vector<std::string> _indexFiles)
+Client::Client(int _fd, const ServerConfig &config)
 {
     this->fd = _fd;
     this->file = NULL;
@@ -20,9 +20,11 @@ Client::Client(int _fd, std::string _rootDir, std::vector<std::string> _indexFil
     this->finished = false;
     this->keepAlive = false;
     this->setlastActivity();
-    this->rootDir = _rootDir;
-    this->indexFiles = _indexFiles;
+    this->rootDir = config.root;
+    this->indexFiles = config.indexFiles;
+    this->serverName = config.serverName;
 }
+
 Client::~Client()
 {
     if (file)
@@ -60,7 +62,6 @@ long Client::getlastActivity() const { return lastActivity; }
 
 bool Client::isTimeout() const
 {
-    std::cout << "Timeout:" << time(NULL) - this->getlastActivity();
     if (time(NULL) - this->getlastActivity() > 5)
         return (true);
     return (false);
@@ -180,8 +181,8 @@ std::string Client::resolvePath(const std::string &path)
     {
         for (size_t i = 0; i < indexFiles.size(); ++i)
         {
-            std::string tryPath = fullPath + "/" + indexFiles[i];
-            std::cout << tryPath << "\n";
+            std::string tryPath = fullPath + indexFiles[i];
+            // std::cout << tryPath << "\n";
             if (stat(tryPath.c_str(), &st) == 0 && !S_ISDIR(st.st_mode))
             {
                 fullPath = tryPath;
@@ -189,6 +190,6 @@ std::string Client::resolvePath(const std::string &path)
             }
         }
     }
-    std::cout << "Path: " << fullPath << "\n";
+    std::cout << "Client:" << fd << " Requested Path: " << fullPath << " From:" << serverName << "\n";
     return fullPath;
 }

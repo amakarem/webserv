@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/24 20:38:20 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/02/04 22:36:16 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/02/04 23:11:34 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,15 +14,14 @@
 # define CLIENT_HPP
 
 #include <fstream>
-#include <string>
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/epoll.h>
 #include <errno.h>
-#include <vector>
 #include <ctime>
 #include "HttpRequest.hpp"
+#include "Struct.hpp"
 
 class Client
 {
@@ -35,10 +34,11 @@ class Client
         bool keepAlive;
         long lastActivity;
         std::string rootDir;
+        std::string serverName;
         std::vector<std::string> indexFiles;
 
     public:
-        Client(int _fd, std::string _rootDir, std::vector<std::string> _indexFiles);
+        Client(int _fd, const ServerConfig &config);
         ~Client();
         int getFd() const;
 
