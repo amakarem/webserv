@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/24 20:40:32 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/02/04 23:13:22 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/02/05 00:16:19 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -91,13 +91,13 @@ std::string HttpRequest::getMimeType()
     return "application/octet-stream"; // fallback for unknown types
 }
 
-std::string HttpRequest::buildHttpResponse(const std::string &body, bool ok, size_t fileSize)
+std::string HttpRequest::buildHttpResponse(const std::string &body, int httpCode, size_t fileSize)
 {
     std::ostringstream oss;
     std::string connectionHeader = "close";
     if (this->keepAlive)
         connectionHeader = "Keep-Alive: timeout=5";
-    if (ok)
+    if (httpCode == 200)
     {
         std::string mime = (this->path.empty() ? "text/html" : getMimeType());
         oss << "HTTP/1.1 200 OK\r\n";
@@ -111,6 +111,16 @@ std::string HttpRequest::buildHttpResponse(const std::string &body, bool ok, siz
 
         if (body.length() > 0)
             oss << body; // append body only if small message
+    }
+    else if (httpCode == 403)
+    {
+        std::string msg = "<h1>403 Forbidden</h1>";
+        oss << "HTTP/1.1 403 Forbidden\r\n";
+        oss << "Content-Length: " << msg.length() << "\r\n";
+        oss << "Content-Type: text/html\r\n";
+        oss << "Connection: " << connectionHeader << "\r\n";
+        oss << "\r\n";
+        oss << msg;
     }
     else
     {

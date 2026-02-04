@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/24 19:05:01 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/01/30 19:45:08 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/02/04 23:59:38 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -34,7 +34,7 @@ class HttpRequest
         std::string getMethod() const ;
         std::string getVersion() const;
         bool isKeepAlive() const;
-        std::string buildHttpResponse(const std::string &body, bool ok, size_t fileSize = 0);
+        std::string buildHttpResponse(const std::string &body, int httpCode, size_t fileSize = 0);
 };
 
 #endif

@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/09 18:32:26 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/02/04 23:31:14 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/02/04 23:40:59 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -137,6 +137,7 @@ void Server::setConfig(const char *filename)
         if (trimmed == "server {")
         {
             current = ServerConfig(); // start new server block
+            current.autoindex = false;
             inServerBlock = true;
             continue;
         }
@@ -197,6 +198,11 @@ void Server::setConfig(const char *filename)
         else if (key == "server_name")
         {
             current.serverName = value;
+        }
+        else if (key == "autoindex")
+        {
+            if (value == "on" || value == "1")
+                current.autoindex = true;
         }
         else
         {

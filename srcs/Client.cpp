@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/24 20:41:35 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/02/04 23:19:13 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/02/05 00:17:15 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,6 +23,7 @@ Client::Client(int _fd, const ServerConfig &config)
     this->rootDir = config.root;
     this->indexFiles = config.indexFiles;
     this->serverName = config.serverName;
+    this->autoindex = config.autoindex;
 }
 
 Client::~Client()
@@ -96,12 +97,20 @@ int Client::readRequest()
     if (!fullPath.empty() && stat(fullPath.c_str(), &st) == 0 && !S_ISDIR(st.st_mode))
     {
         this->setFile(new std::ifstream(fullPath.c_str(), std::ios::in | std::ios::binary));
-        std::string headers = r.buildHttpResponse("", true, st.st_size);
+        std::string headers = r.buildHttpResponse("", 200, st.st_size);
         this->setHeaderBuffer(headers);
+    }
+    else if (!fullPath.empty() && stat(fullPath.c_str(), &st) == 0 && S_ISDIR(st.st_mode))
+    {
+        if (autoindex)
+            this->setHeaderBuffer(r.buildHttpResponse(generateDirectoryListing(fullPath), 200));
+        else
+            this->setHeaderBuffer(r.buildHttpResponse("", 403));
+        this->setFinished(true);
     }
     else
     {
-        this->setHeaderBuffer(r.buildHttpResponse("<h1>404 Not Found</h1>", false));
+        this->setHeaderBuffer(r.buildHttpResponse("", 404));
         this->setFinished(true);
     }
     this->setHeadersSent(true);
@@ -182,7 +191,6 @@ std::string Client::resolvePath(const std::string &path)
         for (size_t i = 0; i < indexFiles.size(); ++i)
         {
             std::string tryPath = fullPath + indexFiles[i];
-            // std::cout << tryPath << "\n";
             if (stat(tryPath.c_str(), &st) == 0 && !S_ISDIR(st.st_mode))
             {
                 fullPath = tryPath;
@@ -192,4 +200,21 @@ std::string Client::resolvePath(const std::string &path)
     }
     std::cout << "Client:" << fd << " Requested Path: " << fullPath << " From:" << serverName << "\n";
     return fullPath;
+}
+
+std::string Client::generateDirectoryListing(const std::string &dir)
+{
+    std::ostringstream oss;
+    oss << "<html><body><h1>Index of " << dir << "</h1><ul>";
+    DIR* dp = opendir(dir.c_str());
+    if (dp) {
+        struct dirent* entry;
+        while ((entry = readdir(dp)) != nullptr) {
+            oss << "<li><a href=\"" << entry->d_name << "\">"
+                << entry->d_name << "</a></li>";
+        }
+        closedir(dp);
+    }
+    oss << "</ul></body></html>";
+    return oss.str();
 }

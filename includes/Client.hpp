@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/24 20:38:20 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/02/04 23:11:34 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/02/04 23:45:02 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,6 +20,7 @@
 #include <sys/epoll.h>
 #include <errno.h>
 #include <ctime>
+#include <dirent.h>
 #include "HttpRequest.hpp"
 #include "Struct.hpp"
 
@@ -36,6 +37,7 @@ class Client
         std::string rootDir;
         std::string serverName;
         std::vector<std::string> indexFiles;
+        bool autoindex;
 
     public:
         Client(int _fd, const ServerConfig &config);
@@ -62,6 +64,7 @@ class Client
         bool isFinished() const;
 
         std::string resolvePath(const std::string &path);
+        std::string generateDirectoryListing(const std::string &dir);
         int readRequest();
         int sendResponse();
 };

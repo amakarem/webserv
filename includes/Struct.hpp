@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/02/04 23:10:27 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/02/04 23:11:10 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/02/04 23:39:05 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,6 +23,7 @@ struct ServerConfig {
     std::string root;                            // root directory
     std::vector<std::string> indexFiles;         // index files in order
     std::string serverName;                      // optional server name
+    bool autoindex;
 };
 
 #endif
