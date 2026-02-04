@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/24 20:41:35 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/02/04 19:22:08 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/02/04 19:40:06 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -125,20 +125,16 @@ int Client::sendResponse()
         const size_t CHUNK_SIZE = 1024;
         char buf[CHUNK_SIZE];
 
-        std::cout << "Send function called\n";
-        while (this->getFile() && !this->getFile()->eof())
+        if (this->getFile() && !this->getFile()->eof())
         {
             this->getFile()->read(buf, CHUNK_SIZE);
             std::streamsize bytesRead = this->getFile()->gcount();
-            std::cout << "Read:" << bytesRead << "\n";
             if (bytesRead <= 0)
                 return (1);
 
             ssize_t bytesSent = send(fd, buf, bytesRead, 0);
-            std::cout << "Sent:" << bytesSent << "\n";
             if (bytesSent < 0)
             {
-                std::cout << "here we go 152\n";
                 if (errno == EAGAIN || errno == EWOULDBLOCK)
                     return (0);
                 return (1);
@@ -161,60 +157,6 @@ int Client::sendResponse()
         return (1);
     return (0);
 }
-
-
-int Client::sendResponseIncremental(size_t maxBytes)
-{
-    int fd = getFd();
-
-    // 1️⃣ Send pending bytes in sendBuffer
-    while (!sendBuffer.empty() && maxBytes > 0)
-    {
-        ssize_t sent = send(fd, sendBuffer.c_str(), std::min(sendBuffer.size(), maxBytes), 0);
-        if (sent < 0)
-        {
-            if (errno == EAGAIN || errno == EWOULDBLOCK)
-                return 0; // try again later
-            return 1;     // error -> disconnect
-        }
-        sendBuffer.erase(0, sent);
-        maxBytes -= sent;
-    }
-
-    // 2️⃣ If buffer still has bytes, stop and return
-    if (!sendBuffer.empty())
-        return 0;
-
-    // 3️⃣ Load next chunk from file
-    if (file && !file->eof() && maxBytes > 0)
-    {
-        char buf[1024]; // chunk size per loop
-        file->read(buf, std::min(sizeof(buf), maxBytes));
-        std::streamsize bytesRead = file->gcount();
-        if (bytesRead > 0)
-        {
-            sendBuffer.assign(buf, bytesRead);
-            return 0; // more to send next loop
-        }
-    }
-
-    // 4️⃣ Close file if finished
-    if (file && file->eof() && sendBuffer.empty())
-    {
-        file->close();
-        delete file;
-        file = nullptr;
-        finished = true;
-    }
-
-    // 5️⃣ If fully finished, return 1 to disconnect
-    if (finished && sendBuffer.empty() && !file)
-        return 1;
-
-    return 0;
-}
-
-
 
 std::string Client::resolvePath(std::string rootdir, std::string index, const std::string &path)
 {
