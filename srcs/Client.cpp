@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/24 20:41:35 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/02/05 00:22:30 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/02/05 00:44:26 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -205,7 +205,9 @@ std::string Client::resolvePath(const std::string &path)
 std::string Client::generateDirectoryListing(const std::string &dir)
 {
     std::ostringstream oss;
-    oss << "<html><body><h1>Index of " << dir << "</h1><ul>";
+    std::string directory = dir;
+    directory = directory.substr(rootDir.length(), directory.length());
+    oss << "<html><body><h1>Index of " << directory << "</h1><ul>";
     DIR* dp = opendir(dir.c_str());
     if (dp) {
         struct dirent* entry;
