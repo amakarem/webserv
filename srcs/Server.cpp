@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/09 18:32:26 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/01/30 19:54:01 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/02/04 19:17:02 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -180,7 +180,7 @@ void Server::run()
         if (nfds < 0)
         {
             std::cerr << "epoll_wait() error\n";
-            continue;
+            break;
         }
 
         // --- Handle clients ---
@@ -222,16 +222,19 @@ void Server::run()
                 }
             }
             if (!c)
-                break;
+                continue;
+            if (c->isTimeout()){
+                disconnectClient(c);
+                continue;
+            }
 
             // --- Read request ---
-            if (!c->isHeadersSent() && (events[i].events & EPOLLIN))
+            if ((events[i].events & EPOLLIN) && !c->isHeadersSent())
             {
-                int rStat = c->readRequest(this->rootdir, this->index);
-                if (rStat == 2)
+                if (c->readRequest(this->rootdir, this->index)) {
                     disconnectClient(c);
-                if (rStat > 0)
-                    break;
+                    continue;
+                }
                 // Enable writing events
                 struct epoll_event ev;
                 ev.events = EPOLLOUT | EPOLLET;
@@ -242,11 +245,11 @@ void Server::run()
             // --- Send headers and file ---
             if ((events[i].events & EPOLLOUT))
             {
-                int rStat = c->sendResponse();
-                if (rStat == 2)
+                if (c->sendResponse()) { 
+                // if (c->sendResponseIncremental(1024)) {
                     disconnectClient(c);
-                if (rStat > 0)
-                    break;
+                    continue;
+                }
             }
         }
     }
@@ -376,9 +379,8 @@ void Server::run()
 
 void Server::disconnectClient(Client *c)
 {
-
-    // if (!c || c->isKeepAlive())//disabled for now
-    //     return;
+    if (!c)
+        return;
 
     int fd = c->getFd();
 
