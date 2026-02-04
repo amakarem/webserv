@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/24 20:38:20 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/02/04 19:39:32 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/02/04 22:36:16 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -34,9 +34,11 @@ class Client
         bool finished;                // done sending everything
         bool keepAlive;
         long lastActivity;
+        std::string rootDir;
+        std::vector<std::string> indexFiles;
 
     public:
-        Client(int _fd);
+        Client(int _fd, std::string _rootDir, std::vector<std::string> _indexFiles);
         ~Client();
         int getFd() const;
 
@@ -59,8 +61,8 @@ class Client
         void setFinished(bool val);
         bool isFinished() const;
 
-        std::string resolvePath(std::string rootdir, std::string index, const std::string &path);
-        int readRequest(const std::string &rootDir, const std::string &index);
+        std::string resolvePath(const std::string &path);
+        int readRequest();
         int sendResponse();
 };
 #endif

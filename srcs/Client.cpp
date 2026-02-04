@@ -6,13 +6,13 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/24 20:41:35 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/02/04 20:59:24 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/02/04 22:47:31 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Client.hpp"
 
-Client::Client(int _fd)
+Client::Client(int _fd, std::string _rootDir, std::vector<std::string> _indexFiles)
 {
     this->fd = _fd;
     this->file = NULL;
@@ -20,6 +20,8 @@ Client::Client(int _fd)
     this->finished = false;
     this->keepAlive = false;
     this->setlastActivity();
+    this->rootDir = _rootDir;
+    this->indexFiles = _indexFiles;
 }
 Client::~Client()
 {
@@ -66,7 +68,7 @@ bool Client::isTimeout() const
 
 // return 0 Client is still alive, keep it in epoll, 1 Client must be disconnected
 
-int Client::readRequest(const std::string &rootDir, const std::string &index)
+int Client::readRequest()
 {
     char buffer[1024];
     int bytesRead = recv(fd, buffer, sizeof(buffer), 0);
@@ -87,7 +89,7 @@ int Client::readRequest(const std::string &rootDir, const std::string &index)
     this->setlastActivity();
 
     std::string urlPath = r.getPath();
-    std::string fullPath = resolvePath(rootDir, index, urlPath);
+    std::string fullPath = resolvePath(urlPath);
 
     struct stat st;
     if (!fullPath.empty() && stat(fullPath.c_str(), &st) == 0 && !S_ISDIR(st.st_mode))
@@ -157,32 +159,29 @@ int Client::sendResponse()
     return (0);
 }
 
-std::string Client::resolvePath(std::string rootdir, std::string index, const std::string &path)
+std::string Client::resolvePath(const std::string &path)
 {
-    std::vector<std::string> defaultIndexes = {"index.html", "index.htm", "default.html", "default.htm"};
     // Prevent empty paths
     if (path.empty())
         return "";
     // Prevent directory traversal
     if (path.find("..") != std::string::npos)
         return "";
+    if (path.find("/.") != std::string::npos)
+        return "";
     // Always start with /
     std::string safePath = path;
     if (safePath[0] != '/')
         safePath = "/" + safePath;
-    // Map "/" to index
-    if (safePath == "/")
-        safePath = "/" + index;
-    // Combine with root directory
-    std::string fullPath = rootdir + safePath;
+    std::string fullPath = rootDir + safePath;
 
     struct stat st;
     if (stat(fullPath.c_str(), &st) == 0 && S_ISDIR(st.st_mode)) // to handle different defualt indexs
     {
-        std::string tryPath = fullPath + index;
-        for (size_t i = 0; i < defaultIndexes.size(); ++i)
+        for (size_t i = 0; i < indexFiles.size(); ++i)
         {
-            std::string tryPath = fullPath + "/" + defaultIndexes[i];
+            std::string tryPath = fullPath + "/" + indexFiles[i];
+            std::cout << tryPath << "\n";
             if (stat(tryPath.c_str(), &st) == 0 && !S_ISDIR(st.st_mode))
             {
                 fullPath = tryPath;
@@ -190,5 +189,6 @@ std::string Client::resolvePath(std::string rootdir, std::string index, const st
             }
         }
     }
+    std::cout << "Path: " << fullPath << "\n";
     return fullPath;
 }

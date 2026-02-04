@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/09 18:32:26 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/02/04 20:59:00 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/02/04 22:43:43 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -77,44 +77,126 @@ Server::~Server()
         close(epollFd);
 }
 
-void Server::setConfig(char const *filename)
+// void Server::setConfigOLD(char const *filename)
+// {
+//     std::ifstream file(filename);
+//     std::string line;
+
+//     if (!file.is_open())
+//         throw openFileError();
+//     while (std::getline(file, line))
+//     {
+//         std::string trimmed = trim(line);
+//         if (trimmed.empty() || trimmed[0] == '#')
+//             continue;
+//         ;
+
+//         std::string key, value;
+//         size_t sep = trimmed.find(' ');
+//         if (sep == std::string::npos)
+//         {
+//             std::cerr << "Error: Invalid config line: " << trimmed;
+//             throw KeyError();
+//         }
+//         key = trimmed.substr(0, sep);
+//         value = trim(trimmed.substr(sep));
+//         if (!value.empty() && value[value.size() - 1] == ';')
+//             value = value.substr(0, value.size() - 1);
+//         if (key == "port")
+//             this->port = std::atoi(value.c_str());
+//         else if (key == "root")
+//             this->rootdir = value;
+//         else if (key == "index")
+//             this->index = value;
+//         else
+//         {
+//             std::cerr << "Error: Invalid Key " << key;
+//             throw KeyError();
+//         }
+//     }
+//     file.close();
+// }
+
+
+void Server::setConfig(const char* filename)
 {
     std::ifstream file(filename);
-    std::string line;
-
     if (!file.is_open())
         throw openFileError();
+
+    std::vector<ServerConfig> configs;
+    ServerConfig current;
+    bool inServerBlock = false;
+    std::string line;
+
     while (std::getline(file, line))
     {
         std::string trimmed = trim(line);
         if (trimmed.empty() || trimmed[0] == '#')
             continue;
-        ;
 
-        std::string key, value;
+        if (trimmed == "server {") {
+            current = ServerConfig(); // start new server block
+            inServerBlock = true;
+            continue;
+        }
+
+        if (trimmed == "}") {
+            if (inServerBlock) {
+                configs.push_back(current); // save finished server block
+                inServerBlock = false;
+            }
+            continue;
+        }
+
+        if (!inServerBlock)
+            continue; // ignore lines outside server blocks
+
+        // --- Parse key/value ---
         size_t sep = trimmed.find(' ');
-        if (sep == std::string::npos)
-        {
-            std::cerr << "Error: Invalid config line: " << trimmed;
+        if (sep == std::string::npos) {
+            std::cerr << "Invalid config line: " << trimmed << "\n";
             throw KeyError();
         }
-        key = trimmed.substr(0, sep);
-        value = trim(trimmed.substr(sep));
-        if (!value.empty() && value[value.size() - 1] == ';')
-            value = value.substr(0, value.size() - 1);
-        if (key == "port")
-            this->port = std::atoi(value.c_str());
-        else if (key == "root")
-            this->rootdir = value;
-        else if (key == "index")
-            this->index = value;
-        else
-        {
-            std::cerr << "Error: Invalid Key " << key;
+
+        std::string key = trimmed.substr(0, sep);
+        std::string value = trim(trimmed.substr(sep));
+        if (!value.empty() && value.back() == ';')
+            value.pop_back();
+
+        if (key == "listen") {
+            // format: ip:port or just port
+            size_t colon = value.find(':');
+            if (colon != std::string::npos) {
+                current.ip = value.substr(0, colon);
+                current.port = std::atoi(value.substr(colon + 1).c_str());
+            } else {
+                current.ip = "0.0.0.0"; // default listen all interfaces
+                current.port = std::atoi(value.c_str());
+            }
+        } else if (key == "root") {
+            current.root = value;
+        } else if (key == "index") {
+            current.indexFiles.clear();
+            std::istringstream iss(value);
+            std::string idx;
+            while (iss >> idx)
+                current.indexFiles.push_back(idx);
+        } else if (key == "server_name") {
+            current.serverName = value;
+        } else {
+            std::cerr << "Invalid config key: " << key << "\n";
             throw KeyError();
         }
     }
+
+    if (inServerBlock)
+        configs.push_back(current);
+
     file.close();
+
+    // Save to your server object
+    this->serverConfigs = configs; // std::vector<ServerConfig> serverConfigs;
 }
 
 void Server::validateConfig()
@@ -142,33 +224,80 @@ void Server::validateConfig()
 
 void Server::startListening()
 {
-    listenFd = socket(AF_INET, SOCK_STREAM, 0);
-    int opt = 1;
-    sockaddr_in addr;
-    std::memset(&addr, 0, sizeof(addr));
-
-    if (listenFd < 0)
-        throw std::runtime_error("socket() failed");
-    if (setsockopt(listenFd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
-        throw std::runtime_error("setsockopt() failed");
-    addr.sin_family = AF_INET;
-    addr.sin_addr.s_addr = INADDR_ANY; // 0.0.0.0
-    addr.sin_port = htons(port);       // IMPORTANT
-
-    if (bind(listenFd, (sockaddr *)&addr, sizeof(addr)) < 0)
-        throw std::runtime_error("bind() failed");
-    if (listen(listenFd, 128) < 0)
-        throw std::runtime_error("listen() failed");
-    epollFd = epoll_create(1);
+    epollFd = epoll_create1(0);
     if (epollFd < 0)
         throw std::runtime_error("epoll_create failed");
-    epoll_event ev;
-    ev.events = EPOLLIN;
-    ev.data.fd = listenFd;
-    if (epoll_ctl(epollFd, EPOLL_CTL_ADD, listenFd, &ev) < 0)
-        throw std::runtime_error("epoll_ctl ADD listenFd failed");
-    std::cout << "Server listening on port " << port << std::endl;
+
+    for (size_t i = 0; i < serverConfigs.size(); ++i)
+    {
+        int listenFd = socket(AF_INET, SOCK_STREAM, 0);
+        if (listenFd < 0)
+            throw std::runtime_error("socket() failed");
+
+        int opt = 1;
+        if (setsockopt(listenFd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
+            throw std::runtime_error("setsockopt() failed");
+
+        // Non-blocking
+        if (fcntl(listenFd, F_SETFL, O_NONBLOCK) < 0)
+            throw std::runtime_error("fcntl() failed");
+
+        sockaddr_in addr;
+        std::memset(&addr, 0, sizeof(addr));
+        addr.sin_family = AF_INET;
+        addr.sin_port = htons(serverConfigs[i].port);
+        addr.sin_addr.s_addr = inet_addr(serverConfigs[i].ip.c_str());
+
+        if (bind(listenFd, (sockaddr*)&addr, sizeof(addr)) < 0)
+            throw std::runtime_error("bind() failed");
+
+        if (listen(listenFd, 128) < 0)
+            throw std::runtime_error("listen() failed");
+
+        epoll_event ev;
+        ev.events = EPOLLIN;
+        ev.data.fd = listenFd;
+        if (epoll_ctl(epollFd, EPOLL_CTL_ADD, listenFd, &ev) < 0)
+            throw std::runtime_error("epoll_ctl ADD listenFd failed");
+
+        listenSockets.push_back(listenFd);
+        listenFdConfig[listenFd] = serverConfigs[i];
+        std::cout << "Server listening on " 
+                  << serverConfigs[i].ip << ":" 
+                  << serverConfigs[i].port << std::endl;
+    }
 }
+
+
+// void Server::startListening()
+// {
+//     listenFd = socket(AF_INET, SOCK_STREAM, 0);
+//     int opt = 1;
+//     sockaddr_in addr;
+//     std::memset(&addr, 0, sizeof(addr));
+
+//     if (listenFd < 0)
+//         throw std::runtime_error("socket() failed");
+//     if (setsockopt(listenFd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
+//         throw std::runtime_error("setsockopt() failed");
+//     addr.sin_family = AF_INET;
+//     addr.sin_addr.s_addr = INADDR_ANY; // 0.0.0.0
+//     addr.sin_port = htons(port);       // IMPORTANT
+
+//     if (bind(listenFd, (sockaddr *)&addr, sizeof(addr)) < 0)
+//         throw std::runtime_error("bind() failed");
+//     if (listen(listenFd, 128) < 0)
+//         throw std::runtime_error("listen() failed");
+//     epollFd = epoll_create(1);
+//     if (epollFd < 0)
+//         throw std::runtime_error("epoll_create failed");
+//     epoll_event ev;
+//     ev.events = EPOLLIN;
+//     ev.data.fd = listenFd;
+//     if (epoll_ctl(epollFd, EPOLL_CTL_ADD, listenFd, &ev) < 0)
+//         throw std::runtime_error("epoll_ctl ADD listenFd failed");
+//     std::cout << "Server listening on port " << port << std::endl;
+// }
 
 void Server::run()
 {
@@ -189,26 +318,37 @@ void Server::run()
             int fd = events[i].data.fd;
 
             // --- New connection ---
-            if (fd == listenFd)
+            auto it = std::find(listenSockets.begin(), listenSockets.end(), fd);
+            if (it != listenSockets.end())
             {
-                int newFd = accept(listenFd, NULL, NULL);
-                if (newFd >= 0)
+                while (true)
                 {
-                    // Make new socket non-blocking
-                    fcntl(newFd, F_SETFL, O_NONBLOCK);
+                    int newFd = accept(fd, NULL, NULL);
+                    if (newFd < 0)
+                    {
+                        if (errno == EAGAIN || errno == EWOULDBLOCK)
+                            break; // all connections accepted
+                        else
+                        {
+                            std::cerr << "accept() error\n";
+                            break;
+                        }
+                    }
 
-                    Client *c = new Client(newFd);
+                    fcntl(newFd, F_SETFL, O_NONBLOCK);
+                    Client *c = new Client(newFd, listenFdConfig[fd].root, listenFdConfig[fd].indexFiles);
 
                     // Add to epoll
-                    struct epoll_event ev;
-                    ev.events = EPOLLOUT | EPOLLIN | EPOLLET; // read, edge-triggered EPOLLOUT |
+                    epoll_event ev;
+                    ev.events = EPOLLIN | EPOLLOUT | EPOLLET;
                     ev.data.fd = newFd;
-                    epoll_ctl(epollFd, EPOLL_CTL_ADD, newFd, &ev);
+                    if (epoll_ctl(epollFd, EPOLL_CTL_ADD, newFd, &ev) < 0)
+                        std::cerr << "epoll_ctl ADD client failed\n";
 
                     clients.push_back(c);
                     std::cout << "New client connected: " << newFd << std::endl;
                 }
-                continue;
+                continue; // go to next event
             }
 
             // --- Existing client ---
@@ -232,7 +372,7 @@ void Server::run()
             // --- Read request ---
             if ((events[i].events & EPOLLIN) && !c->isHeadersSent())
             {
-                if (c->readRequest(this->rootdir, this->index))
+                if (c->readRequest())
                 {
                     disconnectClient(c);
                     continue;
