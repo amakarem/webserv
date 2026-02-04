@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/09 18:32:26 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/02/04 19:37:39 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/02/04 20:53:28 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -201,7 +201,7 @@ void Server::run()
 
                     // Add to epoll
                     struct epoll_event ev;
-                    ev.events = EPOLLOUT | EPOLLIN | EPOLLET; // read, edge-triggered
+                    ev.events = EPOLLOUT | EPOLLIN | EPOLLET; // read, edge-triggered EPOLLOUT | 
                     ev.data.fd = newFd;
                     epoll_ctl(epollFd, EPOLL_CTL_ADD, newFd, &ev);
 
@@ -245,9 +245,7 @@ void Server::run()
             // --- Send headers and file ---
             if ((events[i].events & EPOLLOUT))
             {
-                std::cout << "we try to send here 248\n";
-                if (c->sendResponse()) { 
-                // if (c->sendResponseIncremental(1024)) {
+                if (c->sendResponse()) {
                     disconnectClient(c);
                     continue;
                 }
