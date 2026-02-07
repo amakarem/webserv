@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/24 20:41:35 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/02/07 21:19:14 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/02/07 21:33:50 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -104,7 +104,13 @@ int Client::readRequest()
     {
         if (this->isPHP())
         {
-            this->sendBuffer = executePHP(fullPath, "");
+            std::string phpOut = executePHP(fullPath, "");
+            size_t pos = phpOut.find("\r\n\r\n");
+            if (pos != std::string::npos)
+            {
+                this->cgiHeaders = phpOut.substr(0, pos);
+                this->sendBuffer = phpOut.substr(pos + 4);
+            }
             this->setHeaderBuffer(request.buildHttpResponse("", 200, this->sendBuffer.size()));
         }
         else
@@ -147,7 +153,7 @@ int Client::sendResponse()
         }
     }
 
-    size_t CHUNK_SIZE = 25;
+    const size_t CHUNK_SIZE = 16 * 1024;// 16 KB
     char buf[CHUNK_SIZE];
 
     if (this->isPHP() && this->sendBuffer.empty())

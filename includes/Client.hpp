@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/24 20:38:20 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/02/07 19:18:35 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/02/07 21:31:30 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -47,6 +47,7 @@ class Client
         HttpRequest request;
         bool PHP;
         std::string sendBuffer;
+        std::string cgiHeaders;
 
     public:
         Client(int _fd, const ServerConfig &config);
