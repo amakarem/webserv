@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/24 20:41:35 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/02/07 22:58:06 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/02/07 23:29:32 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -275,77 +275,66 @@ std::string Client::generateDirectoryListing(const std::string &dir)
 
 std::string Client::executePHP(const std::string &scriptPath, const std::string &body)
 {
-    int inPipe[2];  // parent → child (stdin)
-    int outPipe[2]; // child → parent (stdout)
-
+    int inPipe[2], outPipe[2];
     if (pipe(inPipe) != 0 || pipe(outPipe) != 0)
         return "";
 
     pid_t pid = fork();
-    if (pid < 0)
-        return ""; // fork failed
+    if (pid < 0) return "";
 
-    if (pid == 0) // child
-    {
-        close(inPipe[1]);
-        close(outPipe[0]);
+    if (pid == 0) { // child
+        dup2(inPipe[0], STDIN_FILENO);
+        dup2(outPipe[1], STDOUT_FILENO);
+        close(inPipe[0]); close(inPipe[1]);
+        close(outPipe[0]); close(outPipe[1]);
 
-        dup2(inPipe[0], STDIN_FILENO);   // child's stdin
-        dup2(outPipe[1], STDOUT_FILENO); // child's stdout
+        std::vector<std::string> envStrings;
+        envStrings.push_back("GATEWAY_INTERFACE=CGI/1.1");
+        envStrings.push_back("SCRIPT_FILENAME=" + scriptPath);
+        envStrings.push_back("REQUEST_METHOD=" + request.getMethod());
+        envStrings.push_back("REDIRECT_STATUS=200");
 
-        // Set minimal CGI environment variables
-        setenv("GATEWAY_INTERFACE", "CGI/1.1", 1);
-        setenv("SCRIPT_FILENAME", scriptPath.c_str(), 1);
-        setenv("REQUEST_METHOD", request.getMethod().c_str(), 1);
-        setenv("REDIRECT_STATUS", "200", 1);
-        if (request.getMethod() == "POST" || request.getMethod() == "PUT")
-        {
-            std::string contentLengthStr = std::to_string(body.size());
-            setenv("CONTENT_LENGTH", contentLengthStr.c_str(), 1);
-            setenv("CONTENT_TYPE", request.getContentType().c_str(), 1);
-        }
-        else
-        {
+        if (request.getMethod() == "POST" || request.getMethod() == "PUT") {
+            envStrings.push_back("CONTENT_LENGTH=" + std::to_string(body.size()));
+            envStrings.push_back("CONTENT_TYPE=" + request.getContentType());
+        } else {
             std::string path = request.getPath();
             size_t qpos = path.find('?');
             std::string query = (qpos != std::string::npos) ? path.substr(qpos + 1) : "";
-            setenv("QUERY_STRING", query.c_str(), 1);
-            setenv("CONTENT_LENGTH", "0", 1);
+            envStrings.push_back("QUERY_STRING=" + query);
+            envStrings.push_back("CONTENT_LENGTH=0");
         }
-        execlp("php-cgi", "php-cgi", nullptr);
-        _exit(1); // execlp failed
+
+        std::vector<char*> envp;
+        for (auto &s : envStrings) envp.push_back(&s[0]);
+        envp.push_back(nullptr);
+
+        char* argv[] = { (char*)"php-cgi", nullptr };
+        execve("/usr/bin/php-cgi", argv, envp.data());
+        _exit(1);
     }
 
-    // // parent
-    close(inPipe[0]);
-    close(outPipe[1]);
+    // parent
+    close(inPipe[0]);  // write only
+    close(outPipe[1]); // read only
 
-    // send body to PHP stdin
-    if (!body.empty())
-    {
-        std::cout << "content type:" << request.getContentType() << "\n";
-        std::cout << "Body:" << body << "\n";
-        size_t totalSent = 0;
-        while (totalSent < body.size())
-        {
-            ssize_t n = write(inPipe[1], body.c_str() + totalSent, body.size() - totalSent);
-            std::cout << "write:" << n << "\n";
-            if (n <= 0)
-                break;
-            totalSent += n;
-        }
+    // Write body safely
+    size_t totalSent = 0;
+    while (totalSent < body.size()) {
+        ssize_t n = write(outPipe[1], body.c_str() + totalSent, body.size() - totalSent);
+        if (n <= 0) break;
+        totalSent += n;
     }
     close(inPipe[1]);
 
-    // read PHP output
-    char buffer[1024];
+    char buffer[4096];
     std::string result;
     ssize_t n;
     while ((n = read(outPipe[0], buffer, sizeof(buffer))) > 0)
         result.append(buffer, n);
 
     close(outPipe[0]);
-    waitpid(pid, nullptr, 0); // reap child
+    waitpid(pid, nullptr, 0);
 
     return result;
 }
