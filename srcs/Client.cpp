@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/24 20:41:35 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/02/07 19:48:40 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/02/07 21:19:14 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,7 +27,6 @@ Client::Client(int _fd, const ServerConfig &config)
     this->bodyComplete = false;
     this->contentLength = 0;
     this->PHP = false;
-
 }
 
 Client::~Client()
@@ -79,7 +78,7 @@ bool Client::isTimeout() const
 int Client::readRequest()
 {
     char buffer[10];
-    while (true) 
+    while (true)
     {
         ssize_t bytesRead = recv(fd, buffer, sizeof(buffer), 0);
         if (bytesRead == 0) // Client closed connection
@@ -87,8 +86,8 @@ int Client::readRequest()
         if (bytesRead < 0) // Error
         {
             if (errno == EAGAIN || errno == EWOULDBLOCK)
-                break; // no data yet, still alive
-            return (1);     // real error → disconnect
+                break;  // no data yet, still alive
+            return (1); // real error → disconnect
         }
         std::string x(buffer, bytesRead);
         request.append(buffer, bytesRead);
@@ -101,15 +100,18 @@ int Client::readRequest()
         this->fullPath = resolvePath(request.getPath());
 
     struct stat st;
-    if (!fullPath.empty() && stat(fullPath.c_str(), &st) == 0 && !S_ISDIR(st.st_mode) && isPHP())
+    if (!fullPath.empty() && stat(fullPath.c_str(), &st) == 0 && !S_ISDIR(st.st_mode))
     {
-
-    }
-    else if (!fullPath.empty() && stat(fullPath.c_str(), &st) == 0 && !S_ISDIR(st.st_mode) && !isPHP())
-    {
-        this->setFile(new std::ifstream(fullPath.c_str(), std::ios::in | std::ios::binary));
-        std::string headers = request.buildHttpResponse("", 200, st.st_size);
-        this->setHeaderBuffer(headers);
+        if (this->isPHP())
+        {
+            this->sendBuffer = executePHP(fullPath, "");
+            this->setHeaderBuffer(request.buildHttpResponse("", 200, this->sendBuffer.size()));
+        }
+        else
+        {
+            this->setFile(new std::ifstream(fullPath.c_str(), std::ios::in | std::ios::binary));
+            this->setHeaderBuffer(request.buildHttpResponse("", 200, st.st_size));
+        }
     }
     else if (!fullPath.empty() && stat(fullPath.c_str(), &st) == 0 && S_ISDIR(st.st_mode))
     {
@@ -137,58 +139,50 @@ int Client::sendResponse()
         int n = send(fd, this->getHeaderBuffer().c_str(), this->getHeaderBuffer().length(), 0);
         if (n > 0)
             this->setHeaderBuffer(this->getHeaderBuffer().substr(n));
-        else
-            return (1);
-    }
-    if (this->isPHP() && !this->sendBuffer.empty())
-    {
-        ssize_t n = send(fd, this->sendBuffer.c_str(), this->sendBuffer.size(), 0);
-        if (n > 0)
-            this->sendBuffer = this->sendBuffer.substr(n);
-        else
-            return (0); // try again later
-        if (this->sendBuffer.empty())
-            this->setFinished(true);
-        return 0;
-    }
-    else if (this->isPHP() && this->sendBuffer.empty())
-    {
-        // Execute PHP-CGI
-        this->sendBuffer = executePHP(fullPath, "");
-        std::cout << this->sendBuffer;
-        if (this->sendBuffer.empty())
+        else if (n < 0)
         {
-            // error running PHP
-            this->setHeaderBuffer("HTTP/1.1 500 Internal Server Error\r\n\r\n");
-            this->setFinished(true);
-        } else {
-            std::ostringstream headers;
-            headers << "HTTP/1.1 200 OK\r\n";
-            headers << "Content-Type: text/html\r\n";
-            headers << "Content-Length: " << sendBuffer.size() << "\r\n";
-            if (this->isKeepAlive())
-                headers << "Connection: keep-alive\r\n";
-            else
-                headers << "Connection: close\r\n";
-            headers << "\r\n";
-            this->setHeaderBuffer(headers.str());
+            if (errno == EAGAIN || errno == EWOULDBLOCK)
+                return 0;
+            return 1;
         }
-        return 0;
     }
 
-    // Send file in chunks
-    if (this->getFile())
-    {
-        const size_t CHUNK_SIZE = 1024;
-        char buf[CHUNK_SIZE];
+    size_t CHUNK_SIZE = 25;
+    char buf[CHUNK_SIZE];
 
+    if (this->isPHP() && this->sendBuffer.empty())
+    {
+        // error running PHP
+        this->setHeaderBuffer("HTTP/1.1 500 Internal Server Error\r\n\r\n");
+        this->setFinished(true);
+        return 1;
+    }
+    else if (this->isPHP() && !this->sendBuffer.empty())
+    {
+        size_t toSend = CHUNK_SIZE;
+        if (this->sendBuffer.size() < CHUNK_SIZE)
+            toSend = this->sendBuffer.size();
+        ssize_t bytesSent = send(fd, this->sendBuffer.c_str(), toSend, 0);
+        if (bytesSent < 0)
+        {
+            if (errno == EAGAIN || errno == EWOULDBLOCK)
+                return 0;
+            return 1;
+        }
+        if (bytesSent > 0)
+            this->sendBuffer = this->sendBuffer.substr(bytesSent);
+        if (this->sendBuffer.empty())
+            this->setFinished(true);
+        return 0;
+    }
+    else if (!this->isPHP() && this->getFile())
+    {
         if (this->getFile() && !this->getFile()->eof())
         {
             this->getFile()->read(buf, CHUNK_SIZE);
             std::streamsize bytesRead = this->getFile()->gcount();
             if (bytesRead <= 0)
                 return (1);
-
             ssize_t bytesSent = send(fd, buf, bytesRead, 0);
             if (bytesSent < 0)
             {
@@ -210,7 +204,7 @@ int Client::sendResponse()
     }
 
     // If finished, disconnect
-    if (this->isFinished() && this->getHeaderBuffer().empty() && !this->getFile())
+    if (this->isFinished() && this->getHeaderBuffer().empty() && !this->getFile() && this->sendBuffer.empty())
         return (1);
     return (0);
 }
@@ -256,10 +250,12 @@ std::string Client::generateDirectoryListing(const std::string &dir)
     std::string directory = dir;
     directory = directory.substr(rootDir.length(), directory.length());
     oss << "<html><body><h1>Index of " << directory << "</h1><ul>";
-    DIR* dp = opendir(dir.c_str());
-    if (dp) {
-        struct dirent* entry;
-        while ((entry = readdir(dp)) != nullptr) {
+    DIR *dp = opendir(dir.c_str());
+    if (dp)
+    {
+        struct dirent *entry;
+        while ((entry = readdir(dp)) != nullptr)
+        {
             oss << "<li><a href=\"" << entry->d_name << "\">"
                 << entry->d_name << "</a></li>";
         }
@@ -271,8 +267,8 @@ std::string Client::generateDirectoryListing(const std::string &dir)
 
 std::string Client::executePHP(const std::string &scriptPath, const std::string &body)
 {
-    int inPipe[2];   // parent → child (stdin)
-    int outPipe[2];  // child → parent (stdout)
+    int inPipe[2];  // parent → child (stdin)
+    int outPipe[2]; // child → parent (stdout)
 
     if (pipe(inPipe) != 0 || pipe(outPipe) != 0)
         return "";
@@ -294,11 +290,10 @@ std::string Client::executePHP(const std::string &scriptPath, const std::string 
         setenv("SCRIPT_FILENAME", scriptPath.c_str(), 1);
         setenv("REQUEST_METHOD", request.getMethod().c_str(), 1);
         // std::string body = request.getBody(); // empty for GET
-        if (request.getMethod() == "POST" || request.getMethod() == "PUT") {
+        if (request.getMethod() == "POST" || request.getMethod() == "PUT")
             setenv("CONTENT_LENGTH", std::to_string(body.size()).c_str(), 1);
-        } else {
+        else
             setenv("CONTENT_LENGTH", "0", 1);
-        }
         setenv("REDIRECT_STATUS", "200", 1);
         execlp("php-cgi", "php-cgi", nullptr);
         _exit(1); // execlp failed
@@ -315,7 +310,8 @@ std::string Client::executePHP(const std::string &scriptPath, const std::string 
         while (totalSent < body.size())
         {
             ssize_t n = write(inPipe[1], body.c_str() + totalSent, body.size() - totalSent);
-            if (n <= 0) break;
+            if (n <= 0)
+                break;
             totalSent += n;
         }
     }

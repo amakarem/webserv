@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/24 19:05:01 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/02/07 18:17:32 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/02/07 19:52:02 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -51,6 +51,7 @@ class HttpRequest
         std::string buildHttpResponse(const std::string &body, int httpCode, size_t fileSize = 0);
         void reset();
         const std::string& getFullPath() const;
+        std::string getBody();
 };
 
 #endif

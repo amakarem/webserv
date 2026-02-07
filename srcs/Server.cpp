@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/09 18:32:26 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/02/07 18:15:10 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/02/07 21:19:32 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -382,7 +382,7 @@ void Server::run()
 
                     // Add to epoll
                     epoll_event ev;
-                    ev.events = EPOLLIN | EPOLLOUT | EPOLLET;
+                    ev.events = EPOLLIN | EPOLLOUT;
                     ev.data.fd = newFd;
                     if (epoll_ctl(epollFd, EPOLL_CTL_ADD, newFd, &ev) < 0)
                         std::cerr << "epoll_ctl ADD client failed\n";
@@ -423,7 +423,7 @@ void Server::run()
                 if (c->isRequestComplete())
                 {
                     struct epoll_event ev;
-                    ev.events = EPOLLOUT | EPOLLET;
+                    ev.events = EPOLLOUT;
                     ev.data.fd = fd;
                     epoll_ctl(epollFd, EPOLL_CTL_MOD, fd, &ev);
                 }
@@ -432,6 +432,7 @@ void Server::run()
             // --- Send headers and file ---
             if ((events[i].events & EPOLLOUT))
             {
+                // std::cout << "SENDING \n";
                 if (c->sendResponse())
                 {
                     disconnectClient(c);

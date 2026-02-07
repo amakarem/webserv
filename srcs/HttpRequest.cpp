@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/24 20:40:32 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/02/07 18:16:46 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/02/07 20:09:20 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -177,7 +177,7 @@ std::string HttpRequest::getMimeType()
     if (dot == std::string::npos)
         return "text/html"; // default
     std::string ext = this->path.substr(dot + 1);
-    if (ext == "html" || ext == "htm")
+    if (ext == "html" || ext == "htm" || ext == "php")
         return "text/html";
     if (ext == "css")
         return "text/css";
@@ -256,4 +256,21 @@ std::string HttpRequest::buildHttpResponse(const std::string &body, int httpCode
     }
 
     return oss.str();
+}
+
+std::string HttpRequest::getBody()
+{
+    if (method != "POST" && method != "PUT")
+        return "";
+
+    if (tmpFileName.empty())
+        return "";
+
+    // Read body from disk (for PHP CGI)
+    std::ifstream f(tmpFileName, std::ios::binary);
+    if (!f.is_open())
+        return "";
+
+    std::string body((std::istreambuf_iterator<char>(f)), std::istreambuf_iterator<char>());
+    return body;
 }
