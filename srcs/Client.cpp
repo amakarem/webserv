@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/24 20:41:35 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/02/07 18:12:25 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/02/07 19:08:15 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,6 +26,7 @@ Client::Client(int _fd, const ServerConfig &config)
     this->headersParsed = false;
     this->bodyComplete = false;
     this->contentLength = 0;
+    this->PHP = false;
 
 }
 
@@ -58,6 +59,7 @@ bool Client::isHeadersSent() const { return headersSent; }
 
 void Client::setFinished(bool val) { finished = val; }
 bool Client::isFinished() const { return finished; }
+bool Client::isPHP() const { return PHP; }
 
 void Client::setlastActivity()
 {
@@ -204,6 +206,8 @@ std::string Client::resolvePath(const std::string &path)
         }
     }
     std::cout << "Client:" << fd << " Request: " << request.getMethod() << fullPath << " From:" << serverName << "\n";
+    if (fullPath.size() > 4 && fullPath.substr(fullPath.size() - 4) == ".php")
+        this->PHP = true;
     return fullPath;
 }
 

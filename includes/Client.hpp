@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/24 20:38:20 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/02/07 17:36:16 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/02/07 19:05:27 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -44,6 +44,7 @@ class Client
         bool headersParsed;
         bool bodyComplete;
         HttpRequest request;
+        bool PHP;
 
     public:
         Client(int _fd, const ServerConfig &config);
@@ -62,6 +63,7 @@ class Client
         void setlastActivity();
         long getlastActivity() const;
         bool isTimeout() const;
+        bool isPHP() const;
         
         void setHeadersSent(bool val);
         bool isHeadersSent() const;
