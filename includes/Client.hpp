@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/24 20:38:20 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/02/07 19:05:27 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/02/07 19:18:35 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,6 +21,7 @@
 #include <errno.h>
 #include <ctime>
 #include <dirent.h>
+#include <sys/wait.h>
 #include "HttpRequest.hpp"
 #include "Struct.hpp"
 
@@ -45,6 +46,7 @@ class Client
         bool bodyComplete;
         HttpRequest request;
         bool PHP;
+        std::string sendBuffer;
 
     public:
         Client(int _fd, const ServerConfig &config);
@@ -75,5 +77,6 @@ class Client
         std::string generateDirectoryListing(const std::string &dir);
         int readRequest();
         int sendResponse();
+        std::string executePHP(const std::string &scriptPath, const std::string &body);
 };
 #endif

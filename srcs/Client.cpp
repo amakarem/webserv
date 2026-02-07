@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/24 20:41:35 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/02/07 19:08:15 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/02/07 19:48:40 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -101,7 +101,11 @@ int Client::readRequest()
         this->fullPath = resolvePath(request.getPath());
 
     struct stat st;
-    if (!fullPath.empty() && stat(fullPath.c_str(), &st) == 0 && !S_ISDIR(st.st_mode))
+    if (!fullPath.empty() && stat(fullPath.c_str(), &st) == 0 && !S_ISDIR(st.st_mode) && isPHP())
+    {
+
+    }
+    else if (!fullPath.empty() && stat(fullPath.c_str(), &st) == 0 && !S_ISDIR(st.st_mode) && !isPHP())
     {
         this->setFile(new std::ifstream(fullPath.c_str(), std::ios::in | std::ios::binary));
         std::string headers = request.buildHttpResponse("", 200, st.st_size);
@@ -135,6 +139,41 @@ int Client::sendResponse()
             this->setHeaderBuffer(this->getHeaderBuffer().substr(n));
         else
             return (1);
+    }
+    if (this->isPHP() && !this->sendBuffer.empty())
+    {
+        ssize_t n = send(fd, this->sendBuffer.c_str(), this->sendBuffer.size(), 0);
+        if (n > 0)
+            this->sendBuffer = this->sendBuffer.substr(n);
+        else
+            return (0); // try again later
+        if (this->sendBuffer.empty())
+            this->setFinished(true);
+        return 0;
+    }
+    else if (this->isPHP() && this->sendBuffer.empty())
+    {
+        // Execute PHP-CGI
+        this->sendBuffer = executePHP(fullPath, "");
+        std::cout << this->sendBuffer;
+        if (this->sendBuffer.empty())
+        {
+            // error running PHP
+            this->setHeaderBuffer("HTTP/1.1 500 Internal Server Error\r\n\r\n");
+            this->setFinished(true);
+        } else {
+            std::ostringstream headers;
+            headers << "HTTP/1.1 200 OK\r\n";
+            headers << "Content-Type: text/html\r\n";
+            headers << "Content-Length: " << sendBuffer.size() << "\r\n";
+            if (this->isKeepAlive())
+                headers << "Connection: keep-alive\r\n";
+            else
+                headers << "Connection: close\r\n";
+            headers << "\r\n";
+            this->setHeaderBuffer(headers.str());
+        }
+        return 0;
     }
 
     // Send file in chunks
@@ -228,4 +267,69 @@ std::string Client::generateDirectoryListing(const std::string &dir)
     }
     oss << "</ul></body></html>";
     return oss.str();
+}
+
+std::string Client::executePHP(const std::string &scriptPath, const std::string &body)
+{
+    int inPipe[2];   // parent → child (stdin)
+    int outPipe[2];  // child → parent (stdout)
+
+    if (pipe(inPipe) != 0 || pipe(outPipe) != 0)
+        return "";
+
+    pid_t pid = fork();
+    if (pid < 0)
+        return ""; // fork failed
+
+    if (pid == 0) // child
+    {
+        close(inPipe[1]);
+        close(outPipe[0]);
+
+        dup2(inPipe[0], STDIN_FILENO);   // child's stdin
+        dup2(outPipe[1], STDOUT_FILENO); // child's stdout
+
+        // Set minimal CGI environment variables
+        setenv("GATEWAY_INTERFACE", "CGI/1.1", 1);
+        setenv("SCRIPT_FILENAME", scriptPath.c_str(), 1);
+        setenv("REQUEST_METHOD", request.getMethod().c_str(), 1);
+        // std::string body = request.getBody(); // empty for GET
+        if (request.getMethod() == "POST" || request.getMethod() == "PUT") {
+            setenv("CONTENT_LENGTH", std::to_string(body.size()).c_str(), 1);
+        } else {
+            setenv("CONTENT_LENGTH", "0", 1);
+        }
+        setenv("REDIRECT_STATUS", "200", 1);
+        execlp("php-cgi", "php-cgi", nullptr);
+        _exit(1); // execlp failed
+    }
+
+    // parent
+    close(inPipe[0]);
+    close(outPipe[1]);
+
+    // send body to PHP stdin
+    if (!body.empty())
+    {
+        size_t totalSent = 0;
+        while (totalSent < body.size())
+        {
+            ssize_t n = write(inPipe[1], body.c_str() + totalSent, body.size() - totalSent);
+            if (n <= 0) break;
+            totalSent += n;
+        }
+    }
+    close(inPipe[1]);
+
+    // read PHP output
+    char buffer[1024];
+    std::string result;
+    ssize_t n;
+    while ((n = read(outPipe[0], buffer, sizeof(buffer))) > 0)
+        result.append(buffer, n);
+
+    close(outPipe[0]);
+    waitpid(pid, nullptr, 0); // reap child
+
+    return result;
 }
