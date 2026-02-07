@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/24 20:40:32 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/02/07 20:09:20 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/02/07 21:42:27 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -79,7 +79,8 @@ void HttpRequest::append(const char *data, size_t len)
         else
             requestComplete = true;
         raw.erase(headerEnd + 4);
-    } else if (!requestComplete)
+    }
+    else if (!requestComplete)
     {
         if (!tmpFile.is_open())
             throw std::runtime_error("Tmp file not open for body");
@@ -211,7 +212,14 @@ void HttpRequest::reset()
     method.clear();
     path.clear();
     version.clear();
+    cgiHeaders.clear();
 }
+
+void HttpRequest::setcgiHeaders(std::string _cgiHeaders)
+{
+    this->cgiHeaders = _cgiHeaders;
+}
+std::string HttpRequest::getcgiHeaders() { return this->cgiHeaders; };
 
 std::string HttpRequest::buildHttpResponse(const std::string &body, int httpCode, size_t fileSize)
 {
@@ -227,7 +235,19 @@ std::string HttpRequest::buildHttpResponse(const std::string &body, int httpCode
             oss << "Content-Length: " << fileSize << "\r\n"; // for large files
         else
             oss << "Content-Length: " << body.length() << "\r\n"; // small body
-        oss << "Content-Type: " << mime << "\r\n";
+        if (!getcgiHeaders().empty())
+        {
+            std::istringstream hs(cgiHeaders);
+            std::string line;
+            while (std::getline(hs, line))
+            {
+                if (!line.empty() && line.back() == '\r')
+                    line.pop_back();
+                oss << line + "\r\n";
+            }
+        }
+        else
+            oss << "Content-Type: " << mime << "\r\n";
         oss << "Connection: " << connectionHeader << "\r\n";
         oss << "\r\n";
 

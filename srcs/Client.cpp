@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/24 20:41:35 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/02/07 21:33:50 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/02/07 21:41:47 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -108,7 +108,7 @@ int Client::readRequest()
             size_t pos = phpOut.find("\r\n\r\n");
             if (pos != std::string::npos)
             {
-                this->cgiHeaders = phpOut.substr(0, pos);
+                request.setcgiHeaders(phpOut.substr(0, pos));
                 this->sendBuffer = phpOut.substr(pos + 4);
             }
             this->setHeaderBuffer(request.buildHttpResponse("", 200, this->sendBuffer.size()));
