@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/24 20:41:35 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/02/08 00:22:21 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/02/08 00:31:35 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -294,10 +294,13 @@ std::string Client::executePHP(const std::string &scriptPath)
         // Redirect stdin and stdout
         dup2(outPipe[1], STDOUT_FILENO); // send output to parent
         close(outPipe[0]); close(outPipe[1]);
-        int fd = open(tmpFileName.c_str(), O_RDONLY);// read POST body
-        if (fd < 0) _exit(1);
-        dup2(fd, STDIN_FILENO);
-        close(fd);
+        if (!tmpFileName.empty())
+        {
+            int fd = open(tmpFileName.c_str(), O_RDONLY);// read POST body
+            if (fd < 0) _exit(1);
+            dup2(fd, STDIN_FILENO);
+            close(fd);
+        }
 
 
         // Build environment
