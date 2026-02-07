@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/24 20:40:32 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/02/07 21:42:27 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/02/07 21:49:51 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -204,6 +204,11 @@ std::string HttpRequest::getMimeType()
 
 void HttpRequest::reset()
 {
+    if (!tmpFileName.empty()) {
+        tmpFile.close();              // ensure file is closed
+        unlink(tmpFileName.c_str());  // delete from disk
+        tmpFileName.clear();
+    }
     raw.clear();
     headersComplete = false;
     requestComplete = false;

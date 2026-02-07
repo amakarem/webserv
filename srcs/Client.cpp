@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/24 20:41:35 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/02/07 21:41:47 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/02/07 21:51:39 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -59,6 +59,8 @@ bool Client::isHeadersSent() const { return headersSent; }
 void Client::setFinished(bool val) { finished = val; }
 bool Client::isFinished() const { return finished; }
 bool Client::isPHP() const { return PHP; }
+
+void Client::resetRequest() { return request.reset();}
 
 void Client::setlastActivity()
 {

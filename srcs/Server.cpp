@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/09 18:32:26 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/02/07 21:19:32 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/02/07 21:53:29 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -588,6 +588,7 @@ void Server::disconnectClient(Client *c)
         delete c->getFile();
         c->setFile(nullptr);
     }
+    c->resetRequest();
 
     // Remove from clients vector
     for (auto it = clients.begin(); it != clients.end(); ++it)

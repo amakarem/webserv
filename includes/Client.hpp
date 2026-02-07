@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/24 20:38:20 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/02/07 21:35:32 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/02/07 21:50:32 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -78,5 +78,6 @@ class Client
         int readRequest();
         int sendResponse();
         std::string executePHP(const std::string &scriptPath, const std::string &body);
+        void resetRequest();
 };
 #endif
