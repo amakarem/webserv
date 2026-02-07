@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/24 20:38:20 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/02/04 23:45:02 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/02/07 17:36:16 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,20 +32,26 @@ class Client
         std::string headerBuffer;     // HTTP headers to send
         bool headersSent;             // headers already sent
         bool finished;                // done sending everything
-        bool keepAlive;
         long lastActivity;
         std::string rootDir;
         std::string serverName;
         std::vector<std::string> indexFiles;
         bool autoindex;
+        std::string fullPath;
+        std::string recvBuffer;
+        std::string body;
+        size_t contentLength;
+        bool headersParsed;
+        bool bodyComplete;
+        HttpRequest request;
 
     public:
         Client(int _fd, const ServerConfig &config);
         ~Client();
         int getFd() const;
 
-        void setkeepAlive(bool val);
         bool isKeepAlive() const;
+        bool isRequestComplete() const;
         
         void setFile(std::ifstream* f);
         std::ifstream* getFile() const;

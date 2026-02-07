@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/24 20:41:35 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/02/05 00:44:26 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/02/07 18:12:25 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,12 +18,15 @@ Client::Client(int _fd, const ServerConfig &config)
     this->file = NULL;
     this->headersSent = false;
     this->finished = false;
-    this->keepAlive = false;
     this->setlastActivity();
     this->rootDir = config.root;
     this->indexFiles = config.indexFiles;
     this->serverName = config.serverName;
     this->autoindex = config.autoindex;
+    this->headersParsed = false;
+    this->bodyComplete = false;
+    this->contentLength = 0;
+
 }
 
 Client::~Client()
@@ -40,8 +43,9 @@ Client::~Client()
 
 int Client::getFd() const { return fd; }
 
-void Client::setkeepAlive(bool val) { keepAlive = val; }
-bool Client::isKeepAlive() const { return keepAlive; }
+bool Client::isKeepAlive() const { return request.isKeepAlive(); }
+
+bool Client::isRequestComplete() const { return request.isRequestComplete(); }
 
 void Client::setFile(std::ifstream *f) { file = f; }
 std::ifstream *Client::getFile() const { return file; }
@@ -72,45 +76,46 @@ bool Client::isTimeout() const
 
 int Client::readRequest()
 {
-    char buffer[1024];
-    int bytesRead = recv(fd, buffer, sizeof(buffer), 0);
-
-    if (bytesRead == 0) // Client closed connection
-        return (1);
-    if (bytesRead < 0) // Error
+    char buffer[10];
+    while (true) 
     {
-        if (errno == EAGAIN || errno == EWOULDBLOCK)
-            return (0); // no data yet, still alive
-        return (1);     // real error → disconnect
+        ssize_t bytesRead = recv(fd, buffer, sizeof(buffer), 0);
+        if (bytesRead == 0) // Client closed connection
+            return (1);
+        if (bytesRead < 0) // Error
+        {
+            if (errno == EAGAIN || errno == EWOULDBLOCK)
+                break; // no data yet, still alive
+            return (1);     // real error → disconnect
+        }
+        std::string x(buffer, bytesRead);
+        request.append(buffer, bytesRead);
     }
-
-    std::string request(buffer, bytesRead);
-    HttpRequest r(request);
-
-    this->setkeepAlive(r.isKeepAlive());
     this->setlastActivity();
+    if (!request.isHeadersComplete())
+        return (0);
 
-    std::string urlPath = r.getPath();
-    std::string fullPath = resolvePath(urlPath);
+    if (this->fullPath.empty())
+        this->fullPath = resolvePath(request.getPath());
 
     struct stat st;
     if (!fullPath.empty() && stat(fullPath.c_str(), &st) == 0 && !S_ISDIR(st.st_mode))
     {
         this->setFile(new std::ifstream(fullPath.c_str(), std::ios::in | std::ios::binary));
-        std::string headers = r.buildHttpResponse("", 200, st.st_size);
+        std::string headers = request.buildHttpResponse("", 200, st.st_size);
         this->setHeaderBuffer(headers);
     }
     else if (!fullPath.empty() && stat(fullPath.c_str(), &st) == 0 && S_ISDIR(st.st_mode))
     {
         if (autoindex)
-            this->setHeaderBuffer(r.buildHttpResponse(generateDirectoryListing(fullPath), 200));
+            this->setHeaderBuffer(request.buildHttpResponse(generateDirectoryListing(fullPath), 200));
         else
-            this->setHeaderBuffer(r.buildHttpResponse("", 403));
+            this->setHeaderBuffer(request.buildHttpResponse("", 403));
         this->setFinished(true);
     }
     else
     {
-        this->setHeaderBuffer(r.buildHttpResponse("", 404));
+        this->setHeaderBuffer(request.buildHttpResponse("", 404));
         this->setFinished(true);
     }
     this->setHeadersSent(true);
@@ -198,7 +203,7 @@ std::string Client::resolvePath(const std::string &path)
             }
         }
     }
-    std::cout << "Client:" << fd << " Requested Path: " << fullPath << " From:" << serverName << "\n";
+    std::cout << "Client:" << fd << " Request: " << request.getMethod() << fullPath << " From:" << serverName << "\n";
     return fullPath;
 }
 

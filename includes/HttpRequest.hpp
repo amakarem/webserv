@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/24 19:05:01 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/02/04 23:59:38 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/02/07 18:17:32 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,6 +17,7 @@
 #include <sstream>
 #include <sys/stat.h>
 #include <fstream>
+#include <unistd.h>
 
 class HttpRequest
 {
@@ -26,15 +27,30 @@ class HttpRequest
         std::string version;
         bool keepAlive;
         std::string getMimeType();
+        std::string raw;
+        bool headersComplete;
+        bool requestComplete;
+        size_t contentLength;
+        std::string tmpFileName;
+        std::ofstream tmpFile;
+        size_t bodyReceived;
 
     public:
+        HttpRequest();
+        void append(const char* data, size_t len);
         HttpRequest(const std::string &request);
         ~HttpRequest();
         std::string getPath() const;
         std::string getMethod() const ;
         std::string getVersion() const;
         bool isKeepAlive() const;
+        bool isHeadersComplete() const;
+        bool isRequestComplete() const;
+        bool isPost() const;
+        size_t getContentLength() const;
         std::string buildHttpResponse(const std::string &body, int httpCode, size_t fileSize = 0);
+        void reset();
+        const std::string& getFullPath() const;
 };
 
 #endif

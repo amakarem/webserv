@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/09 18:32:26 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/02/04 23:40:59 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/02/07 18:15:10 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -412,7 +412,7 @@ void Server::run()
             }
 
             // --- Read request ---
-            if ((events[i].events & EPOLLIN) && !c->isHeadersSent())
+            if ((events[i].events & EPOLLIN))
             {
                 if (c->readRequest())
                 {
@@ -420,10 +420,13 @@ void Server::run()
                     continue;
                 }
                 // Enable writing events
-                struct epoll_event ev;
-                ev.events = EPOLLOUT | EPOLLET;
-                ev.data.fd = fd;
-                epoll_ctl(epollFd, EPOLL_CTL_MOD, fd, &ev);
+                if (c->isRequestComplete())
+                {
+                    struct epoll_event ev;
+                    ev.events = EPOLLOUT | EPOLLET;
+                    ev.data.fd = fd;
+                    epoll_ctl(epollFd, EPOLL_CTL_MOD, fd, &ev);
+                }
             }
 
             // --- Send headers and file ---

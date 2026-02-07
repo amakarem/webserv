@@ -6,11 +6,94 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/24 20:40:32 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/02/05 00:16:19 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/02/07 18:16:46 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "HttpRequest.hpp"
+
+HttpRequest::HttpRequest()
+{
+    this->headersComplete = false;
+    this->requestComplete = false;
+    this->keepAlive = false;
+    this->contentLength = false;
+}
+
+void HttpRequest::append(const char *data, size_t len)
+{
+    raw.append(data, len);
+    // Headers not done yet
+    if (!headersComplete)
+    {
+        size_t headerEnd = raw.find("\r\n\r\n");
+        if (headerEnd == std::string::npos)
+            return; // wait for more data
+
+        headersComplete = true;
+
+        // Parse headers
+        std::istringstream iss(raw.substr(0, headerEnd));
+        iss >> method >> path >> version;
+
+        std::string line;
+        while (std::getline(iss, line))
+        {
+            if (line.find("Content-Length:") != std::string::npos)
+                contentLength = std::atoi(line.c_str() + 15);
+
+            if (line.find("Connection:") != std::string::npos &&
+                line.find("keep-alive") != std::string::npos)
+                keepAlive = true;
+        }
+
+        // HTTP/1.1 default keep-alive
+        if (version == "HTTP/1.1" && !keepAlive)
+            keepAlive = true;
+        if (contentLength > 0)
+        {
+            char tmpName[] = "./www/tmp/httpbodyXXXXXX"; // XXXXXX will be replaced
+            int fd = mkstemp(tmpName);
+            if (fd < 0)
+                throw std::runtime_error("Cannot create temporary file for HTTP body");
+
+            tmpFileName = tmpName; // store the filename for later use
+            std::cout << "tmpFileName:" << tmpFileName << "\n";
+            tmpFile.open(tmpFileName, std::ios::out | std::ios::binary);
+            if (!tmpFile.is_open())
+            {
+                close(fd);
+                throw std::runtime_error("Cannot open temporary file stream");
+            }
+
+            // Write any body bytes already in buffer
+            size_t bodyStart = headerEnd + 4;
+            if (raw.size() > bodyStart)
+            {
+                tmpFile.write(raw.data() + bodyStart, raw.size() - bodyStart);
+                bodyReceived = raw.size() - bodyStart;
+            }
+            else
+                bodyReceived = 0;
+        }
+        else
+            requestComplete = true;
+        raw.erase(headerEnd + 4);
+    } else if (!requestComplete)
+    {
+        if (!tmpFile.is_open())
+            throw std::runtime_error("Tmp file not open for body");
+
+        tmpFile.write(data, len);
+        bodyReceived += len;
+
+        if (bodyReceived >= contentLength)
+        {
+            tmpFile.close();
+            requestComplete = true;
+        }
+    }
+}
 
 HttpRequest::HttpRequest(const std::string &request)
 {
@@ -61,6 +144,33 @@ bool HttpRequest::isKeepAlive() const
     return this->keepAlive;
 }
 
+bool HttpRequest::isHeadersComplete() const
+{
+    return this->headersComplete;
+}
+
+bool HttpRequest::isRequestComplete() const
+{
+    return this->requestComplete;
+}
+
+bool HttpRequest::isPost() const
+{
+    if (this->method == "POST")
+        return (true);
+    return (false);
+}
+
+size_t HttpRequest::getContentLength() const
+{
+    return this->contentLength;
+}
+
+const std::string &HttpRequest::getFullPath() const
+{
+    return this->path;
+}
+
 std::string HttpRequest::getMimeType()
 {
     size_t dot = this->path.rfind('.');
@@ -89,6 +199,18 @@ std::string HttpRequest::getMimeType()
         return "image/x-icon";
 
     return "application/octet-stream"; // fallback for unknown types
+}
+
+void HttpRequest::reset()
+{
+    raw.clear();
+    headersComplete = false;
+    requestComplete = false;
+    keepAlive = false;
+    contentLength = 0;
+    method.clear();
+    path.clear();
+    version.clear();
 }
 
 std::string HttpRequest::buildHttpResponse(const std::string &body, int httpCode, size_t fileSize)
