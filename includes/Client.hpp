@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/24 20:38:20 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/02/07 22:57:50 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/02/07 23:49:02 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -77,7 +77,8 @@ class Client
         std::string generateDirectoryListing(const std::string &dir);
         int readRequest();
         int sendResponse();
-        std::string executePHP(const std::string &scriptPath, const std::string &body);
+        // std::string executePHP(const std::string &scriptPath, const std::string &body);
+        std::string executePHP(const std::string &scriptPath);
         void resetRequest();
 };
 #endif
