@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/24 20:41:35 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/02/08 00:03:05 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/02/08 00:22:21 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -281,12 +281,8 @@ std::string Client::generateDirectoryListing(const std::string &dir)
 
 std::string Client::executePHP(const std::string &scriptPath)
 {
-    int inPipe[2];   // parent → child (stdin)
-    int outPipe[2];  // child → parent (stdout)
-    std::string tmpFileName = request.gettmpFileName();
-
-    if (pipe(inPipe) != 0 || pipe(outPipe) != 0)
-        return "";
+    int outPipe[2];  // child -> parent
+    if (pipe(outPipe) != 0) return "";
 
     pid_t pid = fork();
     if (pid < 0)
@@ -294,11 +290,15 @@ std::string Client::executePHP(const std::string &scriptPath)
 
     if (pid == 0) // child
     {
+        std::string tmpFileName = request.gettmpFileName();
         // Redirect stdin and stdout
-        dup2(inPipe[0], STDIN_FILENO);   // read POST body
         dup2(outPipe[1], STDOUT_FILENO); // send output to parent
-        close(inPipe[0]); close(inPipe[1]);
         close(outPipe[0]); close(outPipe[1]);
+        int fd = open(tmpFileName.c_str(), O_RDONLY);// read POST body
+        if (fd < 0) _exit(1);
+        dup2(fd, STDIN_FILENO);
+        close(fd);
+
 
         // Build environment
         std::vector<std::string> envVec;
@@ -307,32 +307,20 @@ std::string Client::executePHP(const std::string &scriptPath)
         envVec.push_back("REQUEST_METHOD=" + request.getMethod());
         envVec.push_back("REDIRECT_STATUS=200");
 
-        if (request.getMethod() == "POST" || request.getMethod() == "PUT")
+        if (!tmpFileName.empty() && (request.getMethod() == "POST" || request.getMethod() == "PUT"))
         {
-            std::string contentLengthStr;
-            if (!tmpFileName.empty()) // large upload
-            {
-                struct stat st;
-                if (stat(tmpFileName.c_str(), &st) == 0)
-                    contentLengthStr = std::to_string(st.st_size);
-                else
-                    contentLengthStr = "0";
-            }
-            else
-                contentLengthStr = std::to_string(body.size());
-
-            envVec.push_back("CONTENT_LENGTH=" + contentLengthStr);
+            struct stat st;
+            size_t sz = (stat(tmpFileName.c_str(), &st) == 0) ? st.st_size : 0;
+            envVec.push_back("CONTENT_LENGTH=" + std::to_string(sz));
             envVec.push_back("CONTENT_TYPE=" + request.getContentType());
         }
         else
-        {
-            // GET request: use QUERY_STRING
-            std::string path = request.getPath();
-            size_t qpos = path.find('?');
-            std::string query = (qpos != std::string::npos) ? path.substr(qpos + 1) : "";
-            envVec.push_back("QUERY_STRING=" + query);
             envVec.push_back("CONTENT_LENGTH=0");
-        }
+        //query string avilable with all requests
+        std::string path = request.getPath();
+        size_t qpos = path.find('?');
+        std::string query = (qpos != std::string::npos) ? path.substr(qpos + 1) : "";
+        envVec.push_back("QUERY_STRING=" + query);
 
         // Convert to char* array
         std::vector<char*> envp;
@@ -344,45 +332,10 @@ std::string Client::executePHP(const std::string &scriptPath)
         execve("/usr/bin/php-cgi", argv, envp.data());
         _exit(1); // exec failed
     }
-
+    
     // parent
-    close(inPipe[0]);   // write to child
+
     close(outPipe[1]);  // read from child
-
-    // Send POST body
-    if (!body.empty())
-    {
-        size_t totalSent = 0;
-        ssize_t n;
-        while (totalSent < body.size())
-        {
-            n = write(inPipe[1], body.c_str() + totalSent, body.size() - totalSent);
-            if (n <= 0) break;
-            totalSent += n;
-        }
-    }
-    else if (!tmpFileName.empty())
-    {
-        // Send file contents if body stored on disk
-        std::ifstream file(tmpFileName, std::ios::binary);
-        char buf[8192];
-        while (file)
-        {
-            file.read(buf, sizeof(buf));
-            std::streamsize bytesRead = file.gcount();
-            if (bytesRead <= 0) break;
-
-            size_t totalSent = 0;
-            while (totalSent < static_cast<size_t>(bytesRead))
-            {
-                ssize_t n = write(inPipe[1], buf + totalSent, bytesRead - totalSent);
-                if (n <= 0) break;
-                totalSent += n;
-            }
-        }
-    }
-
-    close(inPipe[1]); // EOF for PHP stdin
 
     // Read PHP output
     char buffer[4096];

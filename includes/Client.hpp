@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/24 20:38:20 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/02/07 23:49:02 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/02/08 00:07:37 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,6 +22,7 @@
 #include <ctime>
 #include <dirent.h>
 #include <sys/wait.h>
+#include <fcntl.h>
 #include "HttpRequest.hpp"
 #include "Struct.hpp"
 
