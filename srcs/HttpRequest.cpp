@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/24 20:40:32 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/02/07 21:49:51 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/02/07 22:38:12 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -39,14 +39,14 @@ void HttpRequest::append(const char *data, size_t len)
         std::string line;
         while (std::getline(iss, line))
         {
+            if (line.find("Content-Type:") != std::string::npos)
+                contentType = line.substr(14);
             if (line.find("Content-Length:") != std::string::npos)
                 contentLength = std::atoi(line.c_str() + 15);
-
             if (line.find("Connection:") != std::string::npos &&
                 line.find("keep-alive") != std::string::npos)
                 keepAlive = true;
         }
-
         // HTTP/1.1 default keep-alive
         if (version == "HTTP/1.1" && !keepAlive)
             keepAlive = true;
@@ -167,9 +167,13 @@ size_t HttpRequest::getContentLength() const
     return this->contentLength;
 }
 
-const std::string &HttpRequest::getFullPath() const
+std::string HttpRequest::getContentType() const
 {
-    return this->path;
+    return this->contentType;
+}
+
+std::string HttpRequest::gettmpFileName() {
+    return this->tmpFileName;
 }
 
 std::string HttpRequest::getMimeType()
@@ -178,7 +182,7 @@ std::string HttpRequest::getMimeType()
     if (dot == std::string::npos)
         return "text/html"; // default
     std::string ext = this->path.substr(dot + 1);
-    if (ext == "html" || ext == "htm" || ext == "php")
+    if (ext == "html" || ext == "htm")// || ext == "php"
         return "text/html";
     if (ext == "css")
         return "text/css";
@@ -218,6 +222,7 @@ void HttpRequest::reset()
     path.clear();
     version.clear();
     cgiHeaders.clear();
+    contentType.clear();
 }
 
 void HttpRequest::setcgiHeaders(std::string _cgiHeaders)

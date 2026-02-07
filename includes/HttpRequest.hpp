@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/24 19:05:01 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/02/07 21:50:01 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/02/07 22:37:43 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,6 +31,7 @@ class HttpRequest
         bool headersComplete;
         bool requestComplete;
         size_t contentLength;
+        std::string contentType;
         std::string tmpFileName;
         std::ofstream tmpFile;
         size_t bodyReceived;
@@ -49,11 +50,12 @@ class HttpRequest
         bool isRequestComplete() const;
         bool isPost() const;
         size_t getContentLength() const;
+        std::string getContentType() const;
         std::string buildHttpResponse(const std::string &body, int httpCode, size_t fileSize = 0);
         void setcgiHeaders(std::string _cgiHeaders);
         std::string getcgiHeaders();
         void reset();
-        const std::string& getFullPath() const;
+        std::string gettmpFileName();
         std::string getBody();
 };
 

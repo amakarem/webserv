@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/24 20:41:35 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/02/07 21:51:39 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/02/07 22:58:06 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -106,7 +106,7 @@ int Client::readRequest()
     {
         if (this->isPHP())
         {
-            std::string phpOut = executePHP(fullPath, "");
+            std::string phpOut = executePHP(fullPath, request.getBody());
             size_t pos = phpOut.find("\r\n\r\n");
             if (pos != std::string::npos)
             {
@@ -297,27 +297,39 @@ std::string Client::executePHP(const std::string &scriptPath, const std::string 
         setenv("GATEWAY_INTERFACE", "CGI/1.1", 1);
         setenv("SCRIPT_FILENAME", scriptPath.c_str(), 1);
         setenv("REQUEST_METHOD", request.getMethod().c_str(), 1);
-        // std::string body = request.getBody(); // empty for GET
-        if (request.getMethod() == "POST" || request.getMethod() == "PUT")
-            setenv("CONTENT_LENGTH", std::to_string(body.size()).c_str(), 1);
-        else
-            setenv("CONTENT_LENGTH", "0", 1);
         setenv("REDIRECT_STATUS", "200", 1);
+        if (request.getMethod() == "POST" || request.getMethod() == "PUT")
+        {
+            std::string contentLengthStr = std::to_string(body.size());
+            setenv("CONTENT_LENGTH", contentLengthStr.c_str(), 1);
+            setenv("CONTENT_TYPE", request.getContentType().c_str(), 1);
+        }
+        else
+        {
+            std::string path = request.getPath();
+            size_t qpos = path.find('?');
+            std::string query = (qpos != std::string::npos) ? path.substr(qpos + 1) : "";
+            setenv("QUERY_STRING", query.c_str(), 1);
+            setenv("CONTENT_LENGTH", "0", 1);
+        }
         execlp("php-cgi", "php-cgi", nullptr);
         _exit(1); // execlp failed
     }
 
-    // parent
+    // // parent
     close(inPipe[0]);
     close(outPipe[1]);
 
     // send body to PHP stdin
     if (!body.empty())
     {
+        std::cout << "content type:" << request.getContentType() << "\n";
+        std::cout << "Body:" << body << "\n";
         size_t totalSent = 0;
         while (totalSent < body.size())
         {
             ssize_t n = write(inPipe[1], body.c_str() + totalSent, body.size() - totalSent);
+            std::cout << "write:" << n << "\n";
             if (n <= 0)
                 break;
             totalSent += n;
