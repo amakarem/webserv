@@ -316,6 +316,9 @@ std::string Client::executePHP(const std::string &scriptPath)
         std::vector<std::string> envVec;
         envVec.push_back("GATEWAY_INTERFACE=CGI/1.1");
         envVec.push_back("SCRIPT_FILENAME=" + scriptPath);
+        envVec.push_back("SCRIPT_NAME=" + request.getPath());
+        envVec.push_back("REQUEST_URI=" + request.getPath());
+        envVec.push_back("SERVER_PROTOCOL=HTTP/1.1");
         envVec.push_back("REQUEST_METHOD=" + request.getMethod());
         envVec.push_back("REDIRECT_STATUS=200");
 
@@ -344,7 +347,7 @@ std::string Client::executePHP(const std::string &scriptPath)
             envp.push_back(&envVec[i][0]);
         envp.push_back(nullptr);
 
-        char* argv[] = { (char*)"php-cgi", (char*)"-f", (char*)scriptPath.c_str(), nullptr };
+        char* argv[] = { (char*)"php-cgi", nullptr };
         execve("/usr/bin/php-cgi", argv, envp.data());
         _exit(1); // exec failed
     }
