@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/24 20:41:35 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/02/08 00:31:35 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/02/08 01:04:56 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -296,10 +296,11 @@ std::string Client::executePHP(const std::string &scriptPath)
         close(outPipe[0]); close(outPipe[1]);
         if (!tmpFileName.empty())
         {
-            int fd = open(tmpFileName.c_str(), O_RDONLY);// read POST body
-            if (fd < 0) _exit(1);
-            dup2(fd, STDIN_FILENO);
-            close(fd);
+            int inputfd = open(tmpFileName.c_str(), O_RDONLY);// read POST body
+            if (inputfd < 0) _exit(1);
+            lseek(inputfd, 0, SEEK_SET);
+            dup2(inputfd, STDIN_FILENO);
+            close(inputfd);
         }
 
 
@@ -313,9 +314,13 @@ std::string Client::executePHP(const std::string &scriptPath)
         if (!tmpFileName.empty() && (request.getMethod() == "POST" || request.getMethod() == "PUT"))
         {
             struct stat st;
-            size_t sz = (stat(tmpFileName.c_str(), &st) == 0) ? st.st_size : 0;
-            envVec.push_back("CONTENT_LENGTH=" + std::to_string(sz));
-            envVec.push_back("CONTENT_TYPE=" + request.getContentType());
+            if (stat(tmpFileName.c_str(), &st) != 0)
+                _exit(1); 
+            envVec.push_back("CONTENT_LENGTH=" + std::to_string(st.st_size));
+            std::string contentType = request.getContentType();
+            if (contentType.empty())
+                contentType = "application/x-www-form-urlencoded"; // default
+            envVec.push_back("CONTENT_TYPE=" + contentType);
         }
         else
             envVec.push_back("CONTENT_LENGTH=0");
