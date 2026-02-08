@@ -20,6 +20,22 @@ HttpRequest::HttpRequest()
     this->contentLength = false;
 }
 
+std::string cleanString(const std::string &input)
+{
+    size_t start = 0;
+    while (start < input.size() && std::isspace(static_cast<unsigned char>(input[start])))
+        ++start;
+
+    if (start == input.size())
+        return ""; // all whitespace
+
+    size_t end = input.size() - 1;
+    while (end > start && std::isspace(static_cast<unsigned char>(input[end])))
+        --end;
+
+    return input.substr(start, end - start + 1);
+}
+
 void HttpRequest::append(const char *data, size_t len)
 {
     raw.append(data, len);
@@ -40,7 +56,7 @@ void HttpRequest::append(const char *data, size_t len)
         while (std::getline(iss, line))
         {
             if (line.find("Content-Type:") != std::string::npos)
-                contentType = line.substr(14);
+                contentType = cleanString(line.substr(14));
             if (line.find("Content-Length:") != std::string::npos)
                 contentLength = std::atoi(line.c_str() + 15);
             if (line.find("Connection:") != std::string::npos &&
@@ -210,7 +226,7 @@ void HttpRequest::reset()
 {
     if (!tmpFileName.empty()) {
         tmpFile.close();              // ensure file is closed
-        unlink(tmpFileName.c_str());  // delete from disk
+        //unlink(tmpFileName.c_str());  // delete from disk
         tmpFileName.clear();
     }
     raw.clear();

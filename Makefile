@@ -11,7 +11,7 @@
 # **************************************************************************** #
 
 CC = c++
-CFLAGS = -Wall -Werror -Wextra -std=c++11
+CFLAGS = -Wall -Werror -Wextra -std=c++17
 SRCS = main.cpp srcs/Server.cpp srcs/HttpRequest.cpp srcs/Client.cpp
 OBJS = $(SRCS:.cpp=.o)
 NAME = webserv

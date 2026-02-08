@@ -185,6 +185,8 @@ void Server::setConfig(const char *filename)
         }
         else if (key == "root")
         {
+            if (value.rfind("./", 0) == 0) // starts with "./"
+                value = std::filesystem::current_path().string() + value.substr(1);
             current.root = value;
         }
         else if (key == "index")

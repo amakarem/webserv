@@ -302,28 +302,29 @@ std::string Client::executePHP(const std::string &scriptPath)
         // Redirect stdin and stdout
         dup2(outPipe[1], STDOUT_FILENO); // send output to parent
         close(outPipe[0]); close(outPipe[1]);
-        if (!tmpFileName.empty())
-        {
-            int inputfd = open(tmpFileName.c_str(), O_RDONLY);// read POST body
-            if (inputfd < 0) _exit(1);
-            lseek(inputfd, 0, SEEK_SET);
-            dup2(inputfd, STDIN_FILENO);
-            close(inputfd);
-        }
-
 
         // Build environment
+        std::string path = request.getPath();
+        size_t qpos = path.find('?');
+        std::string query = (qpos != std::string::npos) ? path.substr(qpos + 1) : "";
+        std::string safePath = (qpos != std::string_view::npos) ? path.substr(0, qpos) : path;
+
         std::vector<std::string> envVec;
         envVec.push_back("GATEWAY_INTERFACE=CGI/1.1");
         envVec.push_back("SCRIPT_FILENAME=" + scriptPath);
-        envVec.push_back("SCRIPT_NAME=" + request.getPath());
-        envVec.push_back("REQUEST_URI=" + request.getPath());
+        envVec.push_back("SCRIPT_NAME=" + safePath);
+        envVec.push_back("REQUEST_URI=" + path);
         envVec.push_back("SERVER_PROTOCOL=HTTP/1.1");
         envVec.push_back("REQUEST_METHOD=" + request.getMethod());
         envVec.push_back("REDIRECT_STATUS=200");
 
         if (!tmpFileName.empty() && (request.getMethod() == "POST" || request.getMethod() == "PUT"))
         {
+            int inputfd = open(tmpFileName.c_str(), O_RDONLY);// read POST body
+            if (inputfd < 0) _exit(1);
+            lseek(inputfd, 0, SEEK_SET);
+            dup2(inputfd, STDIN_FILENO);
+            close(inputfd);
             struct stat st;
             if (stat(tmpFileName.c_str(), &st) != 0)
                 _exit(1); 
@@ -336,15 +337,12 @@ std::string Client::executePHP(const std::string &scriptPath)
         else
             envVec.push_back("CONTENT_LENGTH=0");
         //query string avilable with all requests
-        std::string path = request.getPath();
-        size_t qpos = path.find('?');
-        std::string query = (qpos != std::string::npos) ? path.substr(qpos + 1) : "";
         envVec.push_back("QUERY_STRING=" + query);
 
         // Convert to char* array
         std::vector<char*> envp;
-        for (size_t i = 0; i < envVec.size(); ++i)
-            envp.push_back(&envVec[i][0]);
+        for (auto &s : envVec)
+            envp.push_back(s.data());
         envp.push_back(nullptr);
 
         char* argv[] = { (char*)"php-cgi", nullptr };

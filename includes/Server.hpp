@@ -24,6 +24,7 @@
 #include <unistd.h>
 #include <cstring>
 #include <sys/epoll.h>
+#include <filesystem>
 #include <fcntl.h>
 #include "Client.hpp"
 #include "Struct.hpp"
