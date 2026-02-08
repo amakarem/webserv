@@ -226,7 +226,7 @@ void HttpRequest::reset()
 {
     if (!tmpFileName.empty()) {
         tmpFile.close();              // ensure file is closed
-        //unlink(tmpFileName.c_str());  // delete from disk
+        unlink(tmpFileName.c_str());  // delete from disk
         tmpFileName.clear();
     }
     raw.clear();

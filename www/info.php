@@ -18,4 +18,8 @@ print_r($_ENV);
 echo PHP_EOL . '$_SERVER' . PHP_EOL;
 print_r($_SERVER);
 echo "</pre>";
+
+echo PHP_EOL . '$_FILES' . PHP_EOL;
+print_r($_FILES);
+echo "</pre>";
 // phpinfo();
