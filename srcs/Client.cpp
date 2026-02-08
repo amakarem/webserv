@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/24 20:41:35 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/02/08 01:04:56 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/02/08 01:12:31 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -116,7 +116,15 @@ int Client::readRequest()
             }
             this->setHeaderBuffer(request.buildHttpResponse("", 200, this->sendBuffer.size()));
         }
-        else
+        else if (request.getMethod() == "DELETE")
+        {
+            if (std::remove(fullPath.c_str()) == 0)
+                setHeaderBuffer("HTTP/1.1 200 OK\r\n\r\nFile deleted");
+            else
+                setHeaderBuffer("HTTP/1.1 404 Not Found\r\n\r\nFile not found");
+            setFinished(true);
+        }
+        else 
         {
             this->setFile(new std::ifstream(fullPath.c_str(), std::ios::in | std::ios::binary));
             this->setHeaderBuffer(request.buildHttpResponse("", 200, st.st_size));

@@ -24,5 +24,34 @@
         <br><br>
         <input type="submit" value="Upload File">
     </form>
+
+
+
+    <h1>Test DELETE Request</h1>
+
+    <label for="filePath">File to delete:</label>
+    <input type="text" id="filePath" value="test.txt">
+    <button id="deleteBtn">Delete File</button>
+
+    <pre id="result"></pre>
+
+    <script>
+        document.getElementById('deleteBtn').addEventListener('click', function() {
+            const path = document.getElementById('filePath').value;
+
+            fetch('/' + path, {
+                method: 'DELETE'
+            })
+            .then(response => response.text())
+            .then(data => {
+                document.getElementById('result').textContent = data;
+            })
+            .catch(err => {
+                document.getElementById('result').textContent = 'Error: ' + err;
+            });
+        });
+    </script>
+
 </body>
 </html>
+
