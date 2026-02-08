@@ -91,7 +91,6 @@ int Client::readRequest()
                 break;  // no data yet, still alive
             return (1); // real error → disconnect
         }
-        std::string x(buffer, bytesRead);
         request.append(buffer, bytesRead);
     }
     this->setlastActivity();
