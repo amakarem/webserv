@@ -80,7 +80,7 @@ bool Client::stopHere()
 // return 0 Client is still alive, keep it in epoll, 1 Client must be disconnected
 bool Client::continueAfterHeader()
 {
-        if (request.isHeadersComplete())
+        if (request.isHeadersComplete())//handle redirect
         {
             std::string path = request.getPath();
             size_t qpos = path.find('?');
@@ -96,13 +96,13 @@ bool Client::continueAfterHeader()
                 setFinished(true);
                 return this->stopHere();
             }
-            this->fullPath = resolvePath(request.getPath());
+            this->fullPath = resolvePath(request.getPath());//auto redirect to correct folder path
             if (this->fullPath.empty())
             {
                 setFinished(true);
                 return this->stopHere();
             }
-            if (config.allowedMethods.size() > 0)
+            if (config.allowedMethods.size() > 0)//validate allwed method
             {
                 for (size_t i = 0; i < config.allowedMethods.size(); ++i)
                 {
