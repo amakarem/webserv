@@ -25,7 +25,6 @@ Server::Server()
 {
     this->listenFd = -1;
     this->epollFd = -1;
-    this->port = 8080;
 }
 
 void Server::setdefaultConf()

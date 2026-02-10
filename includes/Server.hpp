@@ -38,9 +38,6 @@ class Server
         std::vector<int> listenSockets;
         int epollFd;
         int listenFd;
-        int port;
-        std::string rootdir;
-        std::string index;
 
     public:
         Server();
