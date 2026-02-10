@@ -45,6 +45,7 @@ class HttpRequest
         HttpRequest(const std::string &request);
         ~HttpRequest();
         std::string getPath() const;
+        void setPath() const;
         std::string getMethod() const ;
         std::string getVersion() const;
         bool isKeepAlive() const;

@@ -22,6 +22,7 @@ Client::Client(int fd, const ServerConfig& config) : fd(fd), config(config)
     this->bodyComplete = false;
     this->contentLength = 0;
     this->PHP = false;
+    this->query_string = "";
 }
 
 Client::~Client()
@@ -70,20 +71,36 @@ bool Client::isTimeout() const
     return (false);
 }
 
+bool Client::stopHere()
+{
+    this->setHeadersSent(true);
+    request.setRequestComplete();
+    return (false);
+}
 // return 0 Client is still alive, keep it in epoll, 1 Client must be disconnected
 bool Client::continueAfterHeader()
 {
         if (request.isHeadersComplete())
         {
-            auto it = config.redirects.find(request.getPath());
+            std::string path = request.getPath();
+            size_t qpos = path.find('?');
+            this->query_string = (qpos != std::string::npos) ? path.substr(qpos + 1) : "";
+            this->script_name = (qpos != std::string_view::npos) ? path.substr(0, qpos) : path;
+            auto it = config.redirects.find(this->script_name);
             if (it != config.redirects.end())
             {
-                std::string header = "HTTP/1.1 " + std::to_string(it->second.code) + " Found\r\nLocation:" + it->second.new_url + "\r\n";
-                setHeaderBuffer(header);
+                std::string url = it->second.new_url;
+                if (!this->query_string.empty())
+                    url = url + "?" + this->query_string;
+                setHeaderBuffer("HTTP/1.1 " + std::to_string(it->second.code) + " Found\r\nLocation:" + url +  "\r\n");
                 setFinished(true);
-                this->setHeadersSent(true);
-                request.setRequestComplete();
-                return (false);
+                return this->stopHere();
+            }
+            this->fullPath = resolvePath(request.getPath());
+            if (this->fullPath.empty())
+            {
+                setFinished(true);
+                return this->stopHere();
             }
             if (config.allowedMethods.size() > 0)
             {
@@ -93,9 +110,7 @@ bool Client::continueAfterHeader()
                         return (true);
                 }
                 this->generateErrorPage(405);
-                this->setHeadersSent(true);
-                request.setRequestComplete();
-                return (false);
+                return this->stopHere();
             }
         }
         return (true);
@@ -272,6 +287,11 @@ std::string Client::resolvePath(const std::string &path)
     struct stat st;
     if (stat(fullPath.c_str(), &st) == 0 && S_ISDIR(st.st_mode)) // to handle different defualt indexs
     {
+        if (fullPath.back() != '/')
+        {
+            setHeaderBuffer("HTTP/1.1 302 Found\r\nLocation:" + safePath + "/\r\n");
+            return "";
+        }
         for (size_t i = 0; i < config.indexFiles.size(); ++i)
         {
             std::string tryPath = fullPath + config.indexFiles[i];
@@ -344,16 +364,12 @@ std::string Client::executePHP(const std::string &scriptPath)
         close(outPipe[0]); close(outPipe[1]);
 
         // Build environment
-        std::string path = request.getPath();
-        size_t qpos = path.find('?');
-        std::string query = (qpos != std::string::npos) ? path.substr(qpos + 1) : "";
-        std::string safePath = (qpos != std::string_view::npos) ? path.substr(0, qpos) : path;
 
         std::vector<std::string> envVec;
         envVec.push_back("GATEWAY_INTERFACE=CGI/1.1");
         envVec.push_back("SCRIPT_FILENAME=" + scriptPath);
-        envVec.push_back("SCRIPT_NAME=" + safePath);
-        envVec.push_back("REQUEST_URI=" + path);
+        envVec.push_back("SCRIPT_NAME=" + this->script_name);
+        envVec.push_back("REQUEST_URI=" + request.getPath());
         envVec.push_back("SERVER_PROTOCOL=HTTP/1.1");
         envVec.push_back("REQUEST_METHOD=" + request.getMethod());
         envVec.push_back("REDIRECT_STATUS=200");
@@ -377,7 +393,7 @@ std::string Client::executePHP(const std::string &scriptPath)
         else
             envVec.push_back("CONTENT_LENGTH=0");
         //query string avilable with all requests
-        envVec.push_back("QUERY_STRING=" + query);
+        envVec.push_back("QUERY_STRING=" + this->query_string);
 
         // Convert to char* array
         std::vector<char*> envp;

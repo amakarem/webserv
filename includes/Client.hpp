@@ -45,6 +45,8 @@ class Client
         HttpRequest request;
         bool PHP;
         std::string sendBuffer;
+        std::string script_name;
+        std::string query_string;
 
     public:
         Client(int fd, const ServerConfig& config);
@@ -74,6 +76,7 @@ class Client
         std::string resolvePath(const std::string &path);
         void generateErrorPage(int errorCode);
         std::string generateDirectoryListing(const std::string &dir);
+        bool stopHere();
         bool continueAfterHeader();
         int readRequest();
         int sendResponse();
