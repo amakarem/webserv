@@ -13,19 +13,16 @@ if (isset($_GET["debug"])) {
 // Check if image file is a actual image or fake image
 if (isset($_POST["submit"])) {
     $target_file = $folder . "/" . basename($_FILES["file"]["name"]);
-    $uploadOk = 1;
     $imageFileType = strtolower(pathinfo($target_file, PATHINFO_EXTENSION));
     $check = getimagesize($_FILES["file"]["tmp_name"]);
     if ($check !== false) {
         echo "File is an image - " . $check["mime"] . ".<br>";
-        $uploadOk = 1;
     } else {
         echo "File is not an image.<br>";
-        $uploadOk = 0;
     }
-
     if (move_uploaded_file($_FILES["file"]["tmp_name"], $target_file)) {
         echo "The file " . htmlspecialchars(basename($_FILES["file"]["name"])) . " has been uploaded.";
+        echo '<a href=upload.php>click here to refresh the list of uploaded files</a>';
     } else {
         echo "Sorry, there was an error uploading your file.";
     }
@@ -56,6 +53,7 @@ $files = array_diff(scandir($folder), array('.', '..'));
 </head>
 
 <body>
+    <h2><a href="upload.html">Upload New file</a></h2>
     <h2>Files in folder: <?= htmlspecialchars($folder) ?></h2>
 
     <?php if (isset($message)): ?>
