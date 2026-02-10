@@ -12,18 +12,12 @@
 
 #include "Client.hpp"
 
-Client::Client(int _fd, const ServerConfig &config)
+Client::Client(int fd, const ServerConfig& config) : fd(fd), config(config)
 {
-    this->fd = _fd;
     this->file = NULL;
     this->headersSent = false;
     this->finished = false;
     this->setlastActivity();
-    this->rootDir = config.root;
-    this->indexFiles = config.indexFiles;
-    this->allowedMethods = config.allowedMethods;
-    this->serverName = config.serverName;
-    this->autoindex = config.autoindex;
     this->headersParsed = false;
     this->bodyComplete = false;
     this->contentLength = 0;
@@ -81,11 +75,11 @@ bool Client::continueAfterHeader()
 {
         if (request.isHeadersComplete())
         {
-            if (allowedMethods.size() > 0)
+            if (config.allowedMethods.size() > 0)
             {
-                for (size_t i = 0; i < allowedMethods.size(); ++i)
+                for (size_t i = 0; i < config.allowedMethods.size(); ++i)
                 {
-                    if (allowedMethods[i] == request.getMethod())
+                    if (config.allowedMethods[i] == request.getMethod())
                     {
                         std::cout << "Method NOT Allowed\n";
                         return (true);
@@ -155,7 +149,7 @@ int Client::readRequest()
     }
     else if (!fullPath.empty() && stat(fullPath.c_str(), &st) == 0 && S_ISDIR(st.st_mode))
     {
-        if (autoindex)
+        if (config.autoindex)
             this->setHeaderBuffer(request.buildHttpResponse(generateDirectoryListing(fullPath), 200));
         else
             this->setHeaderBuffer(request.buildHttpResponse("", 403));
@@ -268,14 +262,14 @@ std::string Client::resolvePath(const std::string &path)
     // Always start with /
     if (safePath[0] != '/')
         safePath = "/" + safePath;
-    std::string fullPath = rootDir + safePath;
+    std::string fullPath = config.root + safePath;
 
     struct stat st;
     if (stat(fullPath.c_str(), &st) == 0 && S_ISDIR(st.st_mode)) // to handle different defualt indexs
     {
-        for (size_t i = 0; i < indexFiles.size(); ++i)
+        for (size_t i = 0; i < config.indexFiles.size(); ++i)
         {
-            std::string tryPath = fullPath + indexFiles[i];
+            std::string tryPath = fullPath + config.indexFiles[i];
             if (stat(tryPath.c_str(), &st) == 0 && !S_ISDIR(st.st_mode))
             {
                 fullPath = tryPath;
@@ -283,7 +277,7 @@ std::string Client::resolvePath(const std::string &path)
             }
         }
     }
-    std::cout << "Client:" << fd << " Request: " << request.getMethod() << fullPath << " From:" << serverName << "\n";
+    std::cout << "Client:" << fd << " Request: " << request.getMethod() << fullPath << " From:" << config.serverName << "\n";
     if (fullPath.size() > 4 && fullPath.substr(fullPath.size() - 4) == ".php")
         this->PHP = true;
     return fullPath;
@@ -293,7 +287,7 @@ std::string Client::generateDirectoryListing(const std::string &dir)
 {
     std::ostringstream oss;
     std::string directory = dir;
-    directory = directory.substr(rootDir.length(), directory.length());
+    directory = directory.substr(config.root.length(), directory.length());
     oss << "<html><body><h1>Index of " << directory << "</h1><ul>";
     DIR *dp = opendir(dir.c_str());
     if (dp)

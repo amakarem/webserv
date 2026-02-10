@@ -35,11 +35,7 @@ class Client
         bool headersSent;             // headers already sent
         bool finished;                // done sending everything
         long lastActivity;
-        std::string rootDir;
-        std::string serverName;
-        std::vector<std::string> indexFiles;
-        std::vector<std::string> allowedMethods;
-        bool autoindex;
+        const ServerConfig& config;
         std::string fullPath;
         std::string recvBuffer;
         std::string body;
@@ -51,7 +47,7 @@ class Client
         std::string sendBuffer;
 
     public:
-        Client(int _fd, const ServerConfig &config);
+        Client(int fd, const ServerConfig& config);
         ~Client();
         int getFd() const;
 

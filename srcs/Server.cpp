@@ -215,6 +215,17 @@ void Server::setConfig(const char *filename)
             while (iss >> idx)
                 current.allowedMethods.push_back(strtoupper(idx));
         }
+        else if (key == "error_page")
+        {
+            value = trim(value);
+            size_t colon = value.find(' ');
+            if (colon != std::string::npos)
+            {
+                int errorCode = std::atoi(value.substr(0, colon).c_str());
+                std::string errorPage = value.substr(colon + 1);
+                current.error_pages[errorCode] = errorPage;
+            }
+        }
         else if (key == "server_name")
         {
             current.serverName = value;

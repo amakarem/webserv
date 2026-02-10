@@ -32,6 +32,7 @@ struct ServerConfig {
     std::string serverName;                      // optional server name
     bool autoindex;
     std::vector<std::string> allowedMethods;
+    std::unordered_map<int, std::string> error_pages;
     std::unordered_map<std::string, Redirect> redirects;
 };
 
