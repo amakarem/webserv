@@ -80,10 +80,7 @@ bool Client::continueAfterHeader()
                 for (size_t i = 0; i < config.allowedMethods.size(); ++i)
                 {
                     if (config.allowedMethods[i] == request.getMethod())
-                    {
-                        std::cout << "Method NOT Allowed\n";
                         return (true);
-                    }
                 }
                 setHeaderBuffer("HTTP/1.1 405 OK\r\n\r\nMethod Not Allowed");
                 setFinished(true);
@@ -123,7 +120,6 @@ int Client::readRequest()
     {
         if (this->isPHP())
         {
-            // std::string phpOut = executePHP(fullPath, request.getBody());
             std::string phpOut = executePHP(fullPath);
             size_t pos = phpOut.find("\r\n\r\n");
             if (pos != std::string::npos)
@@ -136,10 +132,12 @@ int Client::readRequest()
         else if (request.getMethod() == "DELETE")
         {
             if (std::remove(fullPath.c_str()) == 0)
+            {
                 setHeaderBuffer("HTTP/1.1 200 OK\r\n\r\nFile deleted");
+                setFinished(true);
+            }
             else
-                setHeaderBuffer("HTTP/1.1 404 Not Found\r\n\r\nFile not found");
-            setFinished(true);
+                this->generateErrorPage(404);
         }
         else 
         {
@@ -152,14 +150,12 @@ int Client::readRequest()
         if (config.autoindex)
             this->setHeaderBuffer(request.buildHttpResponse(generateDirectoryListing(fullPath), 200));
         else
-            this->setHeaderBuffer(request.buildHttpResponse("", 403));
-        this->setFinished(true);
+            this->generateErrorPage(403);
     }
     else
-    {
-        this->setHeaderBuffer(request.buildHttpResponse("", 404));
-        this->setFinished(true);
-    }
+        this->generateErrorPage(404);
+        // this->setHeaderBuffer(request.buildHttpResponse("<h1>not found by me</h1>", 404));
+        // this->setFinished(true);
     this->setHeadersSent(true);
     return (0);
 }
@@ -281,6 +277,24 @@ std::string Client::resolvePath(const std::string &path)
     if (fullPath.size() > 4 && fullPath.substr(fullPath.size() - 4) == ".php")
         this->PHP = true;
     return fullPath;
+}
+
+void Client::generateErrorPage(int errorCode)
+{
+    auto it = config.error_pages.find(404);
+    if (it != config.error_pages.end()) {
+        struct stat st;
+        if (!it->second.empty() && stat(it->second.c_str(), &st) == 0 && !S_ISDIR(st.st_mode)) 
+        {
+            this->setFile(new std::ifstream(it->second.c_str(), std::ios::in | std::ios::binary));
+            this->setHeaderBuffer(request.buildHttpResponse("", errorCode, st.st_size));
+            return ;
+        }
+        std::cout << it->second << "\n";
+    }
+    this->setHeaderBuffer(request.buildHttpResponse("", errorCode, 0));
+    this->setFinished(true);
+    return;
 }
 
 std::string Client::generateDirectoryListing(const std::string &dir)

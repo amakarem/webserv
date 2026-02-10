@@ -54,6 +54,7 @@ class HttpRequest
         bool isPost() const;
         size_t getContentLength() const;
         std::string getContentType() const;
+        std::string	getHttpCodeMsg(int httpCode);
         std::string buildHttpResponse(const std::string &body, int httpCode, size_t fileSize = 0);
         void setcgiHeaders(std::string _cgiHeaders);
         std::string getcgiHeaders();

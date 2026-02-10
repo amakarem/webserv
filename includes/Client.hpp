@@ -72,6 +72,7 @@ class Client
         bool isFinished() const;
 
         std::string resolvePath(const std::string &path);
+        void generateErrorPage(int errorCode);
         std::string generateDirectoryListing(const std::string &dir);
         bool continueAfterHeader();
         int readRequest();
