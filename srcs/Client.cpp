@@ -265,6 +265,7 @@ int Client::sendResponse()
 
 std::string Client::resolvePath(const std::string &path)
 {
+    std::cout << "Client:" << fd << " Request: " << request.getMethod() << path << " From:" << config.serverName << " - ";
     // Prevent empty paths
     if (path.empty())
         return "";
@@ -289,7 +290,10 @@ std::string Client::resolvePath(const std::string &path)
     {
         if (fullPath.back() != '/')
         {
-            setHeaderBuffer("HTTP/1.1 302 Found\r\nLocation:" + safePath + "/\r\n");
+            safePath = safePath + "/";
+            if (!this->query_string.empty())
+                safePath = safePath + "?" + this->query_string;
+            setHeaderBuffer("HTTP/1.1 302 Found\r\nLocation:" + safePath + "\r\n");
             return "";
         }
         for (size_t i = 0; i < config.indexFiles.size(); ++i)
@@ -302,7 +306,7 @@ std::string Client::resolvePath(const std::string &path)
             }
         }
     }
-    std::cout << "Client:" << fd << " Request: " << request.getMethod() << fullPath << " From:" << config.serverName << "\n";
+    std::cout << fullPath << "\n";
     if (fullPath.size() > 4 && fullPath.substr(fullPath.size() - 4) == ".php")
         this->PHP = true;
     return fullPath;
