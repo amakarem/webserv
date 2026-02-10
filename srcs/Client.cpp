@@ -86,16 +86,33 @@ bool Client::continueAfterHeader()
             size_t qpos = path.find('?');
             this->query_string = (qpos != std::string::npos) ? path.substr(qpos + 1) : "";
             this->script_name = (qpos != std::string_view::npos) ? path.substr(0, qpos) : path;
-            auto it = config.redirects.find(this->script_name);
-            if (it != config.redirects.end())
-            {
-                std::string url = it->second.new_url;
+            // --- prefix matching for redirects ---
+            const Redirect* matched_redirect = nullptr;
+            std::string matched_prefix;
+
+            for (const auto &pair : config.redirects) {
+                const std::string &prefix = pair.first;
+                // Does script_name start with prefix?
+                if (this->script_name.compare(0, prefix.size(), prefix) == 0) {
+                    // Optional: longest prefix wins
+                    if (!matched_redirect || prefix.size() > matched_prefix.size()) {
+                        matched_redirect = &pair.second;
+                        matched_prefix = prefix;
+                    }
+                }
+            }
+            if (matched_redirect) {
+                // Build final URL
+                std::string suffix = this->script_name.substr(matched_prefix.size());
+                std::string url = matched_redirect->new_url + suffix;
                 if (!this->query_string.empty())
-                    url = url + "?" + this->query_string;
-                setHeaderBuffer("HTTP/1.1 " + std::to_string(it->second.code) + " Found\r\nLocation:" + url +  "\r\n");
+                    url += "?" + this->query_string;
+                // Send redirect
+                setHeaderBuffer("HTTP/1.1 " + std::to_string(matched_redirect->code) + " Found\r\nLocation: " + url + "\r\n");
                 setFinished(true);
                 return this->stopHere();
             }
+
             this->fullPath = resolvePath(request.getPath());//auto redirect to correct folder path
             if (this->fullPath.empty())
             {
