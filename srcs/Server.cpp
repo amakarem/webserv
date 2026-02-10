@@ -237,8 +237,8 @@ void Server::setConfig(const char *filename)
         }
         else
         {
-            std::cerr << "Invalid config key: " << key << "\n";
-            throw KeyError();
+            std::cout << "WARNING::Invalid config key: " << key << "\n";
+            // throw KeyError();
         }
     }
 
