@@ -19,6 +19,8 @@ int main(int argc, char **argv)
         std::cerr << "Usage: ./webserv [config_file]\n";
         return (1);
     }
+    signal(SIGINT, handle_sigint);
+    signal(SIGTERM, handle_sigint);
     Server server;
     try
     {

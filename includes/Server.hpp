@@ -28,6 +28,10 @@
 #include <fcntl.h>
 #include "Client.hpp"
 #include "Struct.hpp"
+#include <csignal>
+
+extern volatile sig_atomic_t g_running;
+void handle_sigint(int sig);
 
 class Server
 {

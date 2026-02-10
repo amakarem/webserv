@@ -12,6 +12,13 @@
 
 #include "Server.hpp"
 
+volatile sig_atomic_t g_running = 1;
+
+void handle_sigint(int)
+{
+    g_running = 0;
+}
+
 static std::string trim(const std::string &s)
 {
     size_t start = s.find_first_not_of(" \t");
@@ -384,13 +391,15 @@ void Server::startListening()
 
 void Server::run()
 {
-    while (1)
+    while (g_running)
     {
         // Wait for activity
         epoll_event events[64];
         int nfds = epoll_wait(epollFd, events, 64, -1);
         if (nfds < 0)
         {
+            if (!g_running)
+                continue;
             std::cerr << "epoll_wait() error\n";
             break;
         }
@@ -482,6 +491,13 @@ void Server::run()
             }
         }
     }
+    std::cout << "\nShutdown: Starting\n";
+    for (auto cl : clients)
+        disconnectClient(cl);
+    clients.clear();
+    close(epollFd);
+    close(listenFd);
+    std::cout << "Shutdown: Finished\n";
 }
 
 // void Server::run() //old serve the whole file once

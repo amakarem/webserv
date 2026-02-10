@@ -292,7 +292,7 @@ std::string HttpRequest::buildHttpResponse(const std::string &body, int httpCode
     std::ostringstream oss;
     std::string connectionHeader = "close";
     std::string newbody = body;
-    if (this->keepAlive)
+    if (this->keepAlive && httpCode == 200)
         connectionHeader = "Keep-Alive: timeout=5";
     if (httpCode != 200 && fileSize == 0)
         newbody = "<h1>" + getHttpCodeMsg(httpCode) + "</h1>";
