@@ -226,6 +226,16 @@ void Server::setConfig(const char *filename)
                 current.error_pages[errorCode] = errorPage;
             }
         }
+        else if (key == "location")
+        {
+            std::string location, newlocation, code;
+            std::istringstream riss(value);
+            riss >> location >> newlocation >> code;
+            if (code.empty())
+                code = "302";
+            if (!location.empty() && !newlocation.empty())
+                current.redirects[location] = {newlocation, std::atoi(code.c_str())};
+        }
         else if (key == "server_name")
         {
             current.serverName = value;

@@ -75,6 +75,16 @@ bool Client::continueAfterHeader()
 {
         if (request.isHeadersComplete())
         {
+            auto it = config.redirects.find(request.getPath());
+            if (it != config.redirects.end())
+            {
+                std::string header = "HTTP/1.1 " + std::to_string(it->second.code) + " Found\r\nLocation:" + it->second.new_url + "\r\n";
+                setHeaderBuffer(header);
+                setFinished(true);
+                this->setHeadersSent(true);
+                request.setRequestComplete();
+                return (false);
+            }
             if (config.allowedMethods.size() > 0)
             {
                 for (size_t i = 0; i < config.allowedMethods.size(); ++i)
@@ -82,8 +92,7 @@ bool Client::continueAfterHeader()
                     if (config.allowedMethods[i] == request.getMethod())
                         return (true);
                 }
-                setHeaderBuffer("HTTP/1.1 405 OK\r\n\r\nMethod Not Allowed");
-                setFinished(true);
+                this->generateErrorPage(405);
                 this->setHeadersSent(true);
                 request.setRequestComplete();
                 return (false);
@@ -281,7 +290,7 @@ std::string Client::resolvePath(const std::string &path)
 
 void Client::generateErrorPage(int errorCode)
 {
-    auto it = config.error_pages.find(404);
+    auto it = config.error_pages.find(errorCode);
     if (it != config.error_pages.end()) {
         struct stat st;
         if (!it->second.empty() && stat(it->second.c_str(), &st) == 0 && !S_ISDIR(st.st_mode)) 
