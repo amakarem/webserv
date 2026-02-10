@@ -21,6 +21,17 @@ static std::string trim(const std::string &s)
     return s.substr(start, end - start + 1);
 }
 
+static std::string strtoupper(const std::string &s)
+{
+    std::string upperString;
+    upperString.resize(s.size());
+
+    for (size_t i = 0; i < s.size(); i++) {
+        upperString[i] = std::toupper((unsigned char)s[i]);
+    }
+    return upperString;
+}
+
 Server::Server()
 {
     this->listenFd = -1;
@@ -195,6 +206,14 @@ void Server::setConfig(const char *filename)
             std::string idx;
             while (iss >> idx)
                 current.indexFiles.push_back(idx);
+        }
+        else if (key == "allowedMethods")
+        {
+            current.allowedMethods.clear();
+            std::istringstream iss(value);
+            std::string idx;
+            while (iss >> idx)
+                current.allowedMethods.push_back(strtoupper(idx));
         }
         else if (key == "server_name")
         {

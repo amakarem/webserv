@@ -38,6 +38,7 @@ class Client
         std::string rootDir;
         std::string serverName;
         std::vector<std::string> indexFiles;
+        std::vector<std::string> allowedMethods;
         bool autoindex;
         std::string fullPath;
         std::string recvBuffer;
@@ -76,6 +77,7 @@ class Client
 
         std::string resolvePath(const std::string &path);
         std::string generateDirectoryListing(const std::string &dir);
+        bool continueAfterHeader();
         int readRequest();
         int sendResponse();
         // std::string executePHP(const std::string &scriptPath, const std::string &body);

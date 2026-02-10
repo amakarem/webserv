@@ -171,6 +171,11 @@ bool HttpRequest::isRequestComplete() const
     return this->requestComplete;
 }
 
+void HttpRequest::setRequestComplete()
+{
+    this->requestComplete = true;
+}
+
 bool HttpRequest::isPost() const
 {
     if (this->method == "POST")

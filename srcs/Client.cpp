@@ -21,6 +21,7 @@ Client::Client(int _fd, const ServerConfig &config)
     this->setlastActivity();
     this->rootDir = config.root;
     this->indexFiles = config.indexFiles;
+    this->allowedMethods = config.allowedMethods;
     this->serverName = config.serverName;
     this->autoindex = config.autoindex;
     this->headersParsed = false;
@@ -76,6 +77,29 @@ bool Client::isTimeout() const
 }
 
 // return 0 Client is still alive, keep it in epoll, 1 Client must be disconnected
+bool Client::continueAfterHeader()
+{
+        if (request.isHeadersComplete())
+        {
+            if (allowedMethods.size() > 0)
+            {
+                for (size_t i = 0; i < allowedMethods.size(); ++i)
+                {
+                    if (allowedMethods[i] == request.getMethod())
+                    {
+                        std::cout << "Method NOT Allowed\n";
+                        return (true);
+                    }
+                }
+                setHeaderBuffer("HTTP/1.1 405 OK\r\n\r\nMethod Not Allowed");
+                setFinished(true);
+                this->setHeadersSent(true);
+                request.setRequestComplete();
+                return (false);
+            }
+        }
+        return (true);
+}
 
 int Client::readRequest()
 {
@@ -94,7 +118,7 @@ int Client::readRequest()
         request.append(buffer, bytesRead);
     }
     this->setlastActivity();
-    if (!request.isHeadersComplete())
+    if (!request.isHeadersComplete() || !continueAfterHeader())
         return (0);
 
     if (this->fullPath.empty())

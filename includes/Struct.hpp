@@ -16,6 +16,13 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <unordered_map>
+
+struct Redirect {
+    std::string new_url;
+    int code;   // e.g. 301, 302
+};
+
 
 struct ServerConfig {
     std::string ip = "0.0.0.0";                 // listen interface
@@ -24,6 +31,8 @@ struct ServerConfig {
     std::vector<std::string> indexFiles;         // index files in order
     std::string serverName;                      // optional server name
     bool autoindex;
+    std::vector<std::string> allowedMethods;
+    std::unordered_map<std::string, Redirect> redirects;
 };
 
 #endif

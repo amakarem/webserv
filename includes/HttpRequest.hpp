@@ -50,6 +50,7 @@ class HttpRequest
         bool isKeepAlive() const;
         bool isHeadersComplete() const;
         bool isRequestComplete() const;
+        void setRequestComplete();
         bool isPost() const;
         size_t getContentLength() const;
         std::string getContentType() const;
