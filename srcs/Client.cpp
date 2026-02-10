@@ -108,7 +108,7 @@ bool Client::continueAfterHeader()
                 if (!this->query_string.empty())
                     url += "?" + this->query_string;
                 // Send redirect
-                setHeaderBuffer("HTTP/1.1 " + std::to_string(matched_redirect->code) + " Found\r\nLocation: " + url + "\r\n");
+                setHeaderBuffer("HTTP/1.1 " + std::to_string(matched_redirect->code) + " " + request.getHttpCodeMsg(matched_redirect->code) +"\r\nLocation: " + url + "\r\n");
                 setFinished(true);
                 return this->stopHere();
             }
@@ -135,7 +135,7 @@ bool Client::continueAfterHeader()
 
 int Client::readRequest()
 {
-    char buffer[10];
+    char buffer[4096];
     while (true)
     {
         ssize_t bytesRead = recv(fd, buffer, sizeof(buffer), 0);
@@ -174,7 +174,7 @@ int Client::readRequest()
         {
             if (std::remove(fullPath.c_str()) == 0)
             {
-                setHeaderBuffer("HTTP/1.1 200 OK\r\n\r\nFile deleted");
+                setHeaderBuffer("HTTP/1.1 204 No Content\r\n\r\nDelete on a resource is successful");
                 setFinished(true);
             }
             else
@@ -224,8 +224,7 @@ int Client::sendResponse()
     if (this->isPHP() && this->sendBuffer.empty())
     {
         // error running PHP
-        this->setHeaderBuffer("HTTP/1.1 500 Internal Server Error\r\n\r\n");
-        this->setFinished(true);
+        this->generateErrorPage(500);
         return 1;
     }
     else if (this->isPHP() && !this->sendBuffer.empty())
@@ -310,7 +309,7 @@ std::string Client::resolvePath(const std::string &path)
             safePath = safePath + "/";
             if (!this->query_string.empty())
                 safePath = safePath + "?" + this->query_string;
-            setHeaderBuffer("HTTP/1.1 302 Found\r\nLocation:" + safePath + "\r\n");
+            setHeaderBuffer("HTTP/1.1 301 Moved Permanently\r\nLocation:" + safePath + "\r\n");
             return "";
         }
         for (size_t i = 0; i < config.indexFiles.size(); ++i)

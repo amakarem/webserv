@@ -262,9 +262,11 @@ std::string	HttpRequest::getHttpCodeMsg(int httpCode)
 		case 201:
 			return ("Created");
 		case 204:
-			return ("No Content");
+			return ("No Content");//Delete on a resource is successful
 		case 301:
 			return ("Moved Permanently");
+        case 302:
+            return ("Found");
 		case 400:
 			return ("Bad Request");
 		case 403:
