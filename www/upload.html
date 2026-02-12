@@ -16,7 +16,7 @@
     </form>
 
     <hr>
-
+    <h1>Test Upload</h1>
     <!-- Form to upload a file -->
     <form action="/upload.php" method="POST" enctype="multipart/form-data">
         <label for="file">Choose file to upload:</label>
@@ -24,7 +24,7 @@
         <br><br>
         <input type="submit"  name="submit" value="Upload File">
     </form>
-
+<hr>
     <!-- Form to upload a file -->
     <form action="/upload.php?debug=true" method="POST" enctype="multipart/form-data">
         <label for="file">Choose file to upload with debug:</label>
@@ -32,8 +32,9 @@
         <br><br>
         <input type="submit" name="submit" value="Upload File with debug">
     </form>
-
-
+<hr>
+<li><a href="upload.php">list uploaded files</a></li>
+<hr>
     <h1>Test DELETE Request</h1>
 
     <label for="filePath">File to delete:</label>

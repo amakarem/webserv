@@ -244,14 +244,18 @@ void Server::setConfig(const char *filename)
                 current.redirects[location] = {newlocation, std::atoi(code.c_str())};
         }
         else if (key == "server_name")
-        {
             current.serverName = value;
-        }
         else if (key == "autoindex")
         {
             if (value == "on" || value == "1")
                 current.autoindex = true;
         }
+        else if (key == "php_upload_max_filesize")
+            current.php_upload_max_filesize = value;
+        else if (key == "php_post_max_size")
+            current.php_post_max_size = value;
+        else if (key == "php_memory_limit")
+            current.php_memory_limit = value;
         else
         {
             std::cout << "WARNING::Invalid config key: " << key << "\n";

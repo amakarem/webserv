@@ -422,11 +422,14 @@ std::string Client::executePHP(const std::string &scriptPath)
         envp.push_back(nullptr);
 
         // char* argv[] = { (char*)"php-cgi", nullptr };
+        std::string upload = "upload_max_filesize=" + config.php_upload_max_filesize;
+        std::string post   = "post_max_size=" + config.php_post_max_size;
+        std::string memory = "memory_limit=" + config.php_memory_limit;
         char* argv[] = {
                 (char*)"php-cgi",
-                (char*)"-d", (char*)"upload_max_filesize=20M",
-                (char*)"-d", (char*)"post_max_size=20M",
-                (char*)"-d", (char*)"memory_limit=128M",
+                (char*)"-d", (char*)upload.c_str(),
+                (char*)"-d", (char*)post.c_str(),
+                (char*)"-d", (char*)memory.c_str(),
                 nullptr
             };
 
