@@ -22,4 +22,7 @@ echo "</pre>";
 echo PHP_EOL . '$_FILES' . PHP_EOL;
 print_r($_FILES);
 echo "</pre>";
-// phpinfo();
+echo "upload_max_filesize: " . ini_get("upload_max_filesize") . "\n";
+echo "post_max_size: " . ini_get("post_max_size") . "\n";
+
+phpinfo();

@@ -432,7 +432,7 @@ void Server::run()
 
                     // Add to epoll
                     epoll_event ev;
-                    ev.events = EPOLLIN | EPOLLOUT;
+                    ev.events = EPOLLIN;
                     ev.data.fd = newFd;
                     if (epoll_ctl(epollFd, EPOLL_CTL_ADD, newFd, &ev) < 0)
                         std::cerr << "epoll_ctl ADD client failed\n";

@@ -156,6 +156,8 @@ int Client::readRequest()
     if (this->fullPath.empty())
         this->fullPath = resolvePath(request.getPath());
 
+    if (!request.isRequestComplete())
+        return (0);
     struct stat st;
     if (!fullPath.empty() && stat(fullPath.c_str(), &st) == 0 && !S_ISDIR(st.st_mode))
     {
@@ -391,7 +393,6 @@ std::string Client::executePHP(const std::string &scriptPath)
         envVec.push_back("SERVER_PROTOCOL=HTTP/1.1");
         envVec.push_back("REQUEST_METHOD=" + request.getMethod());
         envVec.push_back("REDIRECT_STATUS=200");
-        envVec.push_back("PHP_VALUE=post_max_size=10G\nupload_max_filesize=10G\nmemory_limit=20G");
 
         if (!tmpFileName.empty() && (request.getMethod() == "POST" || request.getMethod() == "PUT"))
         {
@@ -420,7 +421,15 @@ std::string Client::executePHP(const std::string &scriptPath)
             envp.push_back(s.data());
         envp.push_back(nullptr);
 
-        char* argv[] = { (char*)"php-cgi", nullptr };
+        // char* argv[] = { (char*)"php-cgi", nullptr };
+        char* argv[] = {
+                (char*)"php-cgi",
+                (char*)"-d", (char*)"upload_max_filesize=20M",
+                (char*)"-d", (char*)"post_max_size=20M",
+                (char*)"-d", (char*)"memory_limit=128M",
+                nullptr
+            };
+
         execve("/usr/bin/php-cgi", argv, envp.data());
         _exit(1); // exec failed
     }
