@@ -67,3 +67,7 @@ WebServ configuration is done through a config file defining one or more servers
 
 
 ### Ensure all server blocks have the required parameters listen, root, and index. All other parameters are optional.
+
+### Notes
+- The `www` folder contains sample test files you can use to quickly test the server.
+- The server use this folder `.\www\tmp` for storing the tmp files and requests.
