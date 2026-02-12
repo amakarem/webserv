@@ -193,6 +193,11 @@ size_t HttpRequest::getContentLength() const
     return this->contentLength;
 }
 
+size_t HttpRequest::getBodyReceived() const
+{
+    return this->bodyReceived;
+}
+
 std::string HttpRequest::getContentType() const
 {
     return this->contentType;

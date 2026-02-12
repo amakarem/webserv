@@ -54,6 +54,7 @@ class HttpRequest
         void setRequestComplete();
         bool isPost() const;
         size_t getContentLength() const;
+        size_t getBodyReceived() const;
         std::string getContentType() const;
         std::string	getHttpCodeMsg(int httpCode);
         std::string buildHttpResponse(const std::string &body, int httpCode, size_t fileSize = 0);

@@ -25,6 +25,13 @@
         <input type="submit"  name="submit" value="Upload File">
     </form>
 
+    <!-- Form to upload a file -->
+    <form action="/upload.php?debug=true" method="POST" enctype="multipart/form-data">
+        <label for="file">Choose file to upload with debug:</label>
+        <input type="file" name="file" id="file">
+        <br><br>
+        <input type="submit" name="submit" value="Upload File with debug">
+    </form>
 
 
     <h1>Test DELETE Request</h1>
