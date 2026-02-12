@@ -39,6 +39,7 @@ std::string cleanString(const std::string &input)
 void HttpRequest::append(const char *data, size_t len)
 {
     raw.append(data, len);
+    std::cout << raw;
     // Headers not done yet
     if (!headersComplete)
     {
