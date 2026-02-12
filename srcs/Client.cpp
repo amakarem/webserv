@@ -195,8 +195,6 @@ int Client::readRequest()
     }
     else
         this->generateErrorPage(404);
-        // this->setHeaderBuffer(request.buildHttpResponse("<h1>not found by me</h1>", 404));
-        // this->setFinished(true);
     this->setHeadersSent(true);
     return (0);
 }
