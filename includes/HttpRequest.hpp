@@ -17,6 +17,7 @@
 #include <sstream>
 #include <sys/stat.h>
 #include <fstream>
+#include <filesystem>
 #include <unistd.h>
 
 class HttpRequest
@@ -33,17 +34,18 @@ class HttpRequest
         size_t contentLength;
         std::string contentType;
         std::string tmpFileName;
+        std::string tmpdir;
         std::ofstream tmpFile;
         size_t bodyReceived;
         std::string cgiHeaders;
 
     public:
         HttpRequest();
-        void append(const char* data, size_t len);
+        bool append(const char* data, size_t len);
         HttpRequest(const std::string &request);
         ~HttpRequest();
+        void setTmpDir(std::string tmpdir);
         std::string getPath() const;
-        void setPath() const;
         std::string getMethod() const ;
         std::string getVersion() const;
         bool isKeepAlive() const;

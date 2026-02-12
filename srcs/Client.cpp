@@ -67,6 +67,7 @@ Client::Client(int fd, const ServerConfig& config) : fd(fd), config(config)
     this->contentLength = 0;
     this->PHP = false;
     this->query_string = "";
+    this->request.setTmpDir(config.tmpdir);
 }
 
 Client::~Client()
@@ -191,7 +192,8 @@ int Client::readRequest()
                 break;  // no data yet, still alive
             return (1); // real error → disconnect
         }
-        request.append(buffer, bytesRead);
+        if (!request.append(buffer, bytesRead))
+            return (1);
     }
     this->setlastActivity();
     if (!request.isHeadersComplete() || !continueAfterHeader())

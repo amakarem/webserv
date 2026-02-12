@@ -31,6 +31,7 @@ struct ServerConfig {
     std::vector<std::string> indexFiles;         // index files in order
     std::string serverName;                      // optional server name
     bool autoindex;
+    std::string tmpdir = "/var/tmp";
     std::vector<std::string> allowedMethods;
     std::unordered_map<int, std::string> error_pages;
     std::unordered_map<std::string, Redirect> redirects;

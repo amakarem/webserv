@@ -36,7 +36,7 @@ std::string cleanString(const std::string &input)
     return input.substr(start, end - start + 1);
 }
 
-void HttpRequest::append(const char *data, size_t len)
+bool HttpRequest::append(const char *data, size_t len)
 {
     raw.append(data, len);
     // Headers not done yet
@@ -44,7 +44,7 @@ void HttpRequest::append(const char *data, size_t len)
     {
         size_t headerEnd = raw.find("\r\n\r\n");
         if (headerEnd == std::string::npos)
-            return; // wait for more data
+            return (true); // wait for more data
 
         headersComplete = true;
 
@@ -68,17 +68,23 @@ void HttpRequest::append(const char *data, size_t len)
             keepAlive = true;
         if (contentLength > 0)
         {
-            char tmpName[] = "./www/tmp/httpbodyXXXXXX"; // XXXXXX will be replaced
-            int fd = mkstemp(tmpName);
+            // std::string tmp = tmpdir + "/httpbodyXXXXXX";
+            // char tmpName[] = tmp.c_str(); // XXXXXX will be replaced
+            std::string tmpName = tmpdir + "/httpbodyXXXXXX"; // XXXXXX will be replaced
+            int fd = mkstemp(tmpName.data());
             if (fd < 0)
-                throw std::runtime_error("Cannot create temporary file for HTTP body");
-
+            {
+                std::cout << "ERROR:Cannot create temporary file for HTTP body\n";
+                return (false);
+            }
+            std::cout << tmpName << " as tmp file\n";
             tmpFileName = tmpName; // store the filename for later use
             tmpFile.open(tmpFileName, std::ios::out | std::ios::binary);
             if (!tmpFile.is_open())
             {
                 close(fd);
-                throw std::runtime_error("Cannot open temporary file stream");
+                std::cout << "ERROR:Cannot open temporary file stream\n";
+                return (false);
             }
 
             // Write any body bytes already in buffer
@@ -103,7 +109,10 @@ void HttpRequest::append(const char *data, size_t len)
     else if (!requestComplete)
     {
         if (!tmpFile.is_open())
-            throw std::runtime_error("Tmp file not open for body");
+        {
+            std::cout << "ERROR:Tmp file not open for body\n";
+            return (false);
+        }
 
         tmpFile.write(data, len);
         bodyReceived += len;
@@ -114,6 +123,7 @@ void HttpRequest::append(const char *data, size_t len)
             requestComplete = true;
         }
     }
+    return (true);
 }
 
 HttpRequest::HttpRequest(const std::string &request)
@@ -141,6 +151,12 @@ HttpRequest::HttpRequest(const std::string &request)
         this->path = "";
         this->version = "";
     }
+}
+
+void HttpRequest::setTmpDir(std::string tmpdir)
+{
+    this->tmpdir = tmpdir;
+    std::filesystem::create_directories(tmpdir);
 }
 
 HttpRequest::~HttpRequest() {};

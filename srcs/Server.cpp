@@ -253,6 +253,8 @@ void Server::setConfig(const char *filename)
         }
         else if (key == "server_name")
             current.serverName = value;
+        else if (key == "tmpdir")
+            current.tmpdir = value;
         else if (key == "autoindex")
         {
             if (value == "on" || value == "1")
