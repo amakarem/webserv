@@ -36,8 +36,6 @@ class HttpRequest
         std::ofstream tmpFile;
         size_t bodyReceived;
         std::string cgiHeaders;
-        std::string SCRIPT_NAME;
-        std::string QUERY_STRING;
 
     public:
         HttpRequest();

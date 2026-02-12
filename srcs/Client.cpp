@@ -12,6 +12,50 @@
 
 #include "Client.hpp"
 
+bool Client::saveUploadedFileBinary(const std::string &uploadFolder) {
+    std::ifstream in(request.gettmpFileName(), std::ios::binary);
+    if (!in.is_open()) return false;
+
+    std::string line;
+    std::string filename;
+    std::string headers;
+
+    // Read headers (ASCII) line by line
+    while (std::getline(in, line)) {
+        if (line.back() == '\r') line.pop_back(); // remove trailing \r
+        headers += line + "\n";
+        if (line.empty()) // empty line -> end of headers
+            break;
+
+        // Extract filename
+        size_t fnPos = line.find("filename=\"");
+        if (fnPos != std::string::npos) {
+            fnPos += 10; // skip filename="
+            size_t fnEnd = line.find("\"", fnPos);
+            if (fnEnd != std::string::npos)
+                filename = line.substr(fnPos, fnEnd - fnPos);
+        }
+    }
+    line.clear();
+    headers.clear();
+    if (filename.empty()) return false;
+    // Ensure upload folder exists
+    std::filesystem::create_directories(uploadFolder);
+    std::string filePath = uploadFolder + "/" + filename;
+    std::ofstream out(filePath, std::ios::binary);
+    if (!out.is_open()) return false;
+
+    // Write remaining content (binary-safe)
+    char buffer[8192];
+    while (in.read(buffer, sizeof(buffer)) || in.gcount() > 0)
+        out.write(buffer, in.gcount());
+
+    out.close();
+    setHeaderBuffer(request.buildHttpResponse("<h1>" + filename + " uploaded</h1>", 200, 0));
+    return true;
+}
+
+
 Client::Client(int fd, const ServerConfig& config) : fd(fd), config(config)
 {
     this->file = NULL;
@@ -158,6 +202,13 @@ int Client::readRequest()
 
     if (!request.isRequestComplete())
         return (0);
+    if (request.getMethod() == "POST" && config.allowupload.find(this->script_name) != config.allowupload.end()) {
+        std::string folder = config.allowupload.at(this->script_name);
+        if (!saveUploadedFileBinary(folder))
+            this->generateErrorPage(500);
+        this->setHeadersSent(true);
+        return (0);
+    }
     struct stat st;
     if (!fullPath.empty() && stat(fullPath.c_str(), &st) == 0 && !S_ISDIR(st.st_mode))
     {

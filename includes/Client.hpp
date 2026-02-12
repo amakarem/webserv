@@ -14,6 +14,7 @@
 # define CLIENT_HPP
 
 #include <fstream>
+#include <filesystem>
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -80,7 +81,7 @@ class Client
         bool continueAfterHeader();
         int readRequest();
         int sendResponse();
-        // std::string executePHP(const std::string &scriptPath, const std::string &body);
+        bool saveUploadedFileBinary(const std::string &uploadFolder);
         std::string executePHP(const std::string &scriptPath);
         void resetRequest();
 };

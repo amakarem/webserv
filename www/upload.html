@@ -16,7 +16,17 @@
     </form>
 
     <hr>
-    <h1>Test Upload</h1>
+
+    <h1>Test DIRECT Upload</h1>
+    <!-- Form to upload a file -->
+    <form action="/upload_request" method="POST" enctype="multipart/form-data">
+        <label for="file">Choose file to upload:</label>
+        <input type="file" name="file" id="file">
+        <br><br>
+        <input type="submit"  name="submit" value="Upload File">
+    </form>
+    <hr>
+    <h1>Test Upload with PHP</h1>
     <!-- Form to upload a file -->
     <form action="/upload.php" method="POST" enctype="multipart/form-data">
         <label for="file">Choose file to upload:</label>
@@ -24,7 +34,7 @@
         <br><br>
         <input type="submit"  name="submit" value="Upload File">
     </form>
-<hr>
+    <hr>
     <!-- Form to upload a file -->
     <form action="/upload.php?debug=true" method="POST" enctype="multipart/form-data">
         <label for="file">Choose file to upload with debug:</label>

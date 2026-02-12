@@ -243,6 +243,14 @@ void Server::setConfig(const char *filename)
             if (!location.empty() && !newlocation.empty())
                 current.redirects[location] = {newlocation, std::atoi(code.c_str())};
         }
+        else if (key == "allowupload")
+        {
+            std::string url, localfolder;
+            std::istringstream riss(value);
+            riss >> url >> localfolder;
+            if (!url.empty() && !localfolder.empty())
+                current.allowupload[url] = localfolder;
+        }
         else if (key == "server_name")
             current.serverName = value;
         else if (key == "autoindex")

@@ -39,7 +39,6 @@ std::string cleanString(const std::string &input)
 void HttpRequest::append(const char *data, size_t len)
 {
     raw.append(data, len);
-    std::cout << raw;
     // Headers not done yet
     if (!headersComplete)
     {
@@ -75,7 +74,6 @@ void HttpRequest::append(const char *data, size_t len)
                 throw std::runtime_error("Cannot create temporary file for HTTP body");
 
             tmpFileName = tmpName; // store the filename for later use
-            std::cout << "tmpFileName:" << tmpFileName << "\n";
             tmpFile.open(tmpFileName, std::ios::out | std::ios::binary);
             if (!tmpFile.is_open())
             {
@@ -210,10 +208,10 @@ std::string HttpRequest::gettmpFileName() {
 
 std::string HttpRequest::getMimeType()
 {
-    size_t dot = this->SCRIPT_NAME.rfind('.');
+    size_t dot = this->path.rfind('.');
     if (dot == std::string::npos)
         return "text/html"; // default
-    std::string ext = this->SCRIPT_NAME.substr(dot + 1);
+    std::string ext = this->path.substr(dot + 1);
     if (ext == "html" || ext == "htm" || ext == "php")
         return "text/html";
     if (ext == "css")
@@ -278,6 +276,8 @@ std::string	HttpRequest::getHttpCodeMsg(int httpCode)
 			return ("Moved Permanently");
         case 302:
             return ("Found");
+        case 303:
+            return ("See Other");
 		case 400:
 			return ("Bad Request");
 		case 403:
