@@ -39,31 +39,31 @@ WebServ configuration is done through a config file defining one or more servers
 
 ### Required Parameters
 
--listen — defines the IP and port the server listens on
+- `listen` — defines the IP and port the server listens on
 
--root — the root directory for the server
+- `root` — the root directory for the server
 
--index — default index files
+- `index` — default index files
 
 ###  Optional Parameters
 
--server_name — domain name of the server
+- `server_name` — domain name of the server
 
--autoindex — enable directory listing (on/off or 1/0)
+- `autoindex` — enable directory listing (on/off or 1/0)
 
--error_page — path to custom error pages example (error_page 404 /var/www/error_pages/404.html;)
+- `error_page` — path to custom error pages example (error_page 404 /var/www/error_pages/404.html;)
 
--allowupload — configure upload paths, it's 2 parts the endpoint and the localfolder example (allowupload /upload_request /var/www/uploads;) any POST request to upload_request will save the file into /var/www/uploads
+- `allowupload` — configure upload paths, it's 2 parts the endpoint and the localfolder example (allowupload /upload_request /var/www/uploads;) any POST request to upload_request will save the file into /var/www/uploads
 
--php_upload_max_filesize — maximum file upload size for PHP defualt set to 20M
+- `php_upload_max_filesize` — maximum file upload size for PHP defualt set to 20M
 
--php_post_max_size — maximum POST request size for PHP defualt set to 20M
+- `php_post_max_size` — maximum POST request size for PHP defualt set to 20M
 
--php_memory_limit — PHP memory limit for PHP defualt set to 128M
+- `php_memory_limit` — PHP memory limit for PHP defualt set to 128M
 
--allowedMethods — allowed HTTP methods (GET, POST, DELETE, PUT) if not set all is allowed
+- `allowedMethods` — allowed HTTP methods (GET, POST, DELETE, PUT) if not set all is allowed
 
--location — URL redirects (supports 301 or 302 status codes) example (location /redirect /subfolder 302;)
+- `location` — URL redirects (supports 301 or 302 status codes) example (location /redirect /subfolder 302;)
 
 
 ### Ensure all server blocks have the required parameters listen, root, and index. All other parameters are optional.
