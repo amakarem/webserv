@@ -82,7 +82,7 @@ $files = array_diff(scandir($folder), array('.', '..'));
                     </td>
                     <td>
                     <td>
-                        <button onclick="deleteFile('/uploads/<?= htmlspecialchars($file) ?>')">
+                        <button onclick="deleteFile('uploads/<?= htmlspecialchars($file) ?>')">
                             DELETE REQUEST
                         </button>
                     </td>
