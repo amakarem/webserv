@@ -1,4 +1,5 @@
 <?php
+print_r($_SERVER);
 
 $folder = __DIR__ . "/uploads"; // folder to list files
 if (!is_dir($folder)) {
@@ -31,6 +32,7 @@ if (isset($_POST["submit"])) {
 // Handle delete request
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_file'])) {
     $fileToDelete = basename($_POST['delete_file']); // sanitize
+    echo $fileToDelete;
     $fullPath = $folder . "/" . $fileToDelete;
     if (is_file($fullPath)) {
         unlink($fullPath);
@@ -75,8 +77,16 @@ $files = array_diff(scandir($folder), array('.', '..'));
                     <td>
                         <form method="POST" style="display:inline">
                             <input type="hidden" name="delete_file" value="<?= htmlspecialchars($file) ?>">
-                            <button type="submit" onclick="return confirm('Delete <?= htmlspecialchars($file) ?>?')">DELETE</button>
+                            <button type="submit" onclick="return confirm('Delete <?= htmlspecialchars($file) ?>?')">PHP DELETE</button>
                         </form>
+                    </td>
+                    <td>
+                    <td>
+                        <button onclick="deleteFile('/uploads/<?= htmlspecialchars($file) ?>')">
+                            DELETE REQUEST
+                        </button>
+                    </td>
+
                     </td>
                 </tr>
             <?php endif; ?>
@@ -85,3 +95,22 @@ $files = array_diff(scandir($folder), array('.', '..'));
 </body>
 
 </html>
+
+<script>
+    function deleteFile(path) {
+        if (!confirm('Delete ' + path + '?'))
+            return;
+
+        fetch('/' + path, {
+                method: 'DELETE'
+            })
+            .then(response => response.text())
+            .then(data => {
+                alert(data);
+                location.reload(); // refresh after delete
+            })
+            .catch(err => {
+                alert('Error: ' + err);
+            });
+    }
+</script>
