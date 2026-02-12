@@ -209,11 +209,11 @@ std::string HttpRequest::gettmpFileName() {
 
 std::string HttpRequest::getMimeType()
 {
-    size_t dot = this->path.rfind('.');
+    size_t dot = this->SCRIPT_NAME.rfind('.');
     if (dot == std::string::npos)
         return "text/html"; // default
-    std::string ext = this->path.substr(dot + 1);
-    if (ext == "html" || ext == "htm")// || ext == "php"
+    std::string ext = this->SCRIPT_NAME.substr(dot + 1);
+    if (ext == "html" || ext == "htm" || ext == "php")
         return "text/html";
     if (ext == "css")
         return "text/css";

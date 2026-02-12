@@ -391,6 +391,7 @@ std::string Client::executePHP(const std::string &scriptPath)
         envVec.push_back("SERVER_PROTOCOL=HTTP/1.1");
         envVec.push_back("REQUEST_METHOD=" + request.getMethod());
         envVec.push_back("REDIRECT_STATUS=200");
+        envVec.push_back("PHP_VALUE=post_max_size=10G\nupload_max_filesize=10G\nmemory_limit=20G");
 
         if (!tmpFileName.empty() && (request.getMethod() == "POST" || request.getMethod() == "PUT"))
         {
