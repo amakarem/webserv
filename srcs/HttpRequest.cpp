@@ -91,6 +91,11 @@ void HttpRequest::append(const char *data, size_t len)
             }
             else
                 bodyReceived = 0;
+            if (bodyReceived >= contentLength)
+            {
+                tmpFile.close();
+                requestComplete = true;
+            }
         }
         else
             requestComplete = true;

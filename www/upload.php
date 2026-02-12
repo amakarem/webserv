@@ -1,6 +1,4 @@
 <?php
-print_r($_SERVER);
-
 $folder = __DIR__ . "/uploads"; // folder to list files
 if (!is_dir($folder)) {
     mkdir($folder, 0777, true);
