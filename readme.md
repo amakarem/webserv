@@ -66,6 +66,9 @@ WebServ configuration is done through a config file defining one or more servers
 - `location` — URL redirects (supports 301 or 302 status codes) example (location /redirect /subfolder 302;)
 
 
+## Supported CGI
+- `php-cgi`
+
 ### Ensure all server blocks have the required parameters listen, root, and index. All other parameters are optional.
 
 ### Notes
