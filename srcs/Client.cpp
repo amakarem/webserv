@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/24 20:41:35 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/02/13 17:15:24 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/02/13 17:49:20 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -198,9 +198,9 @@ int Client::readRequest()
             return (1);
         if (bytesRead < 0) // Error
         {
-            if (errno == EAGAIN || errno == EWOULDBLOCK)
-                break;  // no data yet, still alive
-            return (1); // real error → disconnect
+            // if (errno == EAGAIN || errno == EWOULDBLOCK)
+            break;  // no data yet, still alive
+            // return (1); // real error → disconnect
         }
         if (!request.append(buffer, bytesRead))
             return (1);
@@ -271,15 +271,17 @@ int Client::sendResponse()
     // Send headers
     if (!this->getHeaderBuffer().empty())
     {
-        int n = send(fd, this->getHeaderBuffer().c_str(), this->getHeaderBuffer().length(), 0);
-        if (n > 0)
-            this->setHeaderBuffer(this->getHeaderBuffer().substr(n));
-        else if (n < 0)
+        ssize_t n = send(fd, this->getHeaderBuffer().c_str(), this->getHeaderBuffer().length(), 0);
+        if (n < 0)
         {
-            if (errno == EAGAIN || errno == EWOULDBLOCK)
-                return 0;
-            return 1;
+            // if (errno == EAGAIN || errno == EWOULDBLOCK)
+            return 0;
+            // return 1;
         }
+        else if (n == 0)
+            return 0;
+        this->setHeaderBuffer(this->getHeaderBuffer().substr(n));
+        this->setlastActivity();
     }
 
     const size_t CHUNK_SIZE = 16 * 1024; // 16 KB
@@ -299,12 +301,15 @@ int Client::sendResponse()
         ssize_t bytesSent = send(fd, this->sendBuffer.c_str(), toSend, 0);
         if (bytesSent < 0)
         {
-            if (errno == EAGAIN || errno == EWOULDBLOCK)
-                return 0;
-            return 1;
+            // if (errno == EAGAIN || errno == EWOULDBLOCK)
+            return 0;
+            // return 1;
         }
         if (bytesSent > 0)
+        {
             this->sendBuffer = this->sendBuffer.substr(bytesSent);
+            this->setlastActivity();
+        }
         if (this->sendBuffer.empty())
             this->setFinished(true);
         return 0;
@@ -320,12 +325,13 @@ int Client::sendResponse()
             ssize_t bytesSent = send(fd, buf, bytesRead, 0);
             if (bytesSent < 0)
             {
-                if (errno == EAGAIN || errno == EWOULDBLOCK)
-                    return (0);
-                return (1);
+                // if (errno == EAGAIN || errno == EWOULDBLOCK)
+                return (0);
+                // return (1);
             }
             if (bytesSent < bytesRead)
                 return (1);
+            this->setlastActivity();                
         }
 
         if (this->getFile() && this->getFile()->eof())
