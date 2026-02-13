@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/24 20:40:32 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/02/13 17:15:19 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/02/13 17:34:39 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -36,6 +36,35 @@ std::string cleanString(const std::string &input)
     return input.substr(start, end - start + 1);
 }
 
+void HttpRequest::decodePath()
+{
+    std::string output;
+    std::string input = this->path;
+    output.reserve(input.size());
+
+    for (size_t i = 0; i < input.size(); ++i)
+    {
+        if (input[i] == '%' && i + 2 < input.size()
+            && std::isxdigit(input[i + 1])
+            && std::isxdigit(input[i + 2]))
+        {
+            std::string hex = input.substr(i + 1, 2);
+            char decoded = static_cast<char>(std::strtol(hex.c_str(), NULL, 16));
+            output += decoded;
+            i += 2; // skip the two hex digits
+        }
+        else if (input[i] == '+')
+        {
+            output += ' ';
+        }
+        else
+        {
+            output += input[i];
+        }
+    }
+    this->path = output;
+}
+
 bool HttpRequest::append(const char *data, size_t len)
 {
     raw.append(data, len);
@@ -51,7 +80,7 @@ bool HttpRequest::append(const char *data, size_t len)
         // Parse headers
         std::istringstream iss(raw.substr(0, headerEnd));
         iss >> method >> path >> version;
-
+        decodePath();
         std::string line;
         while (std::getline(iss, line))
         {

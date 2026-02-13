@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/24 19:05:01 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/02/13 17:15:56 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/02/13 17:32:22 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -45,6 +45,7 @@ public:
     HttpRequest(const std::string &request);
     ~HttpRequest();
     void setTmpDir(std::string tmpdir);
+    void decodePath();
     std::string getPath() const;
     std::string getMethod() const;
     std::string getVersion() const;
