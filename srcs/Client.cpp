@@ -6,30 +6,35 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/24 20:41:35 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/02/08 01:12:31 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/02/13 17:15:24 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Client.hpp"
 
-bool Client::saveUploadedFileBinary(const std::string &uploadFolder) {
+bool Client::saveUploadedFileBinary(const std::string &uploadFolder)
+{
     std::ifstream in(request.gettmpFileName(), std::ios::binary);
-    if (!in.is_open()) return false;
+    if (!in.is_open())
+        return false;
 
     std::string line;
     std::string filename;
     std::string headers;
 
     // Read headers (ASCII) line by line
-    while (std::getline(in, line)) {
-        if (line.back() == '\r') line.pop_back(); // remove trailing \r
+    while (std::getline(in, line))
+    {
+        if (line.back() == '\r')
+            line.pop_back(); // remove trailing \r
         headers += line + "\n";
         if (line.empty()) // empty line -> end of headers
             break;
 
         // Extract filename
         size_t fnPos = line.find("filename=\"");
-        if (fnPos != std::string::npos) {
+        if (fnPos != std::string::npos)
+        {
             fnPos += 10; // skip filename="
             size_t fnEnd = line.find("\"", fnPos);
             if (fnEnd != std::string::npos)
@@ -38,12 +43,14 @@ bool Client::saveUploadedFileBinary(const std::string &uploadFolder) {
     }
     line.clear();
     headers.clear();
-    if (filename.empty()) return false;
+    if (filename.empty())
+        return false;
     // Ensure upload folder exists
     std::filesystem::create_directories(uploadFolder);
     std::string filePath = uploadFolder + "/" + filename;
     std::ofstream out(filePath, std::ios::binary);
-    if (!out.is_open()) return false;
+    if (!out.is_open())
+        return false;
 
     // Write remaining content (binary-safe)
     char buffer[8192];
@@ -55,8 +62,7 @@ bool Client::saveUploadedFileBinary(const std::string &uploadFolder) {
     return true;
 }
 
-
-Client::Client(int fd, const ServerConfig& config) : fd(fd), config(config)
+Client::Client(int fd, const ServerConfig &config) : fd(fd), config(config)
 {
     this->file = NULL;
     this->headersSent = false;
@@ -101,7 +107,7 @@ void Client::setFinished(bool val) { finished = val; }
 bool Client::isFinished() const { return finished; }
 bool Client::isPHP() const { return PHP; }
 
-void Client::resetRequest() { return request.reset();}
+void Client::resetRequest() { return request.reset(); }
 
 void Client::setlastActivity()
 {
@@ -125,57 +131,61 @@ bool Client::stopHere()
 // return 0 Client is still alive, keep it in epoll, 1 Client must be disconnected
 bool Client::continueAfterHeader()
 {
-        if (request.isHeadersComplete())//handle redirect
+    if (request.isHeadersComplete()) // handle redirect
+    {
+        std::string path = request.getPath();
+        size_t qpos = path.find('?');
+        this->query_string = (qpos != std::string::npos) ? path.substr(qpos + 1) : "";
+        this->script_name = (qpos != std::string_view::npos) ? path.substr(0, qpos) : path;
+        // --- prefix matching for redirects ---
+        const Redirect *matched_redirect = nullptr;
+        std::string matched_prefix;
+
+        for (const auto &pair : config.redirects)
         {
-            std::string path = request.getPath();
-            size_t qpos = path.find('?');
-            this->query_string = (qpos != std::string::npos) ? path.substr(qpos + 1) : "";
-            this->script_name = (qpos != std::string_view::npos) ? path.substr(0, qpos) : path;
-            // --- prefix matching for redirects ---
-            const Redirect* matched_redirect = nullptr;
-            std::string matched_prefix;
-
-            for (const auto &pair : config.redirects) {
-                const std::string &prefix = pair.first;
-                // Does script_name start with prefix?
-                if (this->script_name.compare(0, prefix.size(), prefix) == 0) {
-                    // Optional: longest prefix wins
-                    if (!matched_redirect || prefix.size() > matched_prefix.size()) {
-                        matched_redirect = &pair.second;
-                        matched_prefix = prefix;
-                    }
-                }
-            }
-            if (matched_redirect) {
-                // Build final URL
-                std::string suffix = this->script_name.substr(matched_prefix.size());
-                std::string url = matched_redirect->new_url + suffix;
-                if (!this->query_string.empty())
-                    url += "?" + this->query_string;
-                // Send redirect
-                setHeaderBuffer("HTTP/1.1 " + std::to_string(matched_redirect->code) + " " + request.getHttpCodeMsg(matched_redirect->code) +"\r\nLocation: " + url + "\r\n");
-                setFinished(true);
-                return this->stopHere();
-            }
-
-            this->fullPath = resolvePath(request.getPath());//auto redirect to correct folder path
-            if (this->fullPath.empty())
+            const std::string &prefix = pair.first;
+            // Does script_name start with prefix?
+            if (this->script_name.compare(0, prefix.size(), prefix) == 0)
             {
-                setFinished(true);
-                return this->stopHere();
-            }
-            if (config.allowedMethods.size() > 0)//validate allwed method
-            {
-                for (size_t i = 0; i < config.allowedMethods.size(); ++i)
+                // Optional: longest prefix wins
+                if (!matched_redirect || prefix.size() > matched_prefix.size())
                 {
-                    if (config.allowedMethods[i] == request.getMethod())
-                        return (true);
+                    matched_redirect = &pair.second;
+                    matched_prefix = prefix;
                 }
-                this->generateErrorPage(405);
-                return this->stopHere();
             }
         }
-        return (true);
+        if (matched_redirect)
+        {
+            // Build final URL
+            std::string suffix = this->script_name.substr(matched_prefix.size());
+            std::string url = matched_redirect->new_url + suffix;
+            if (!this->query_string.empty())
+                url += "?" + this->query_string;
+            // Send redirect
+            setHeaderBuffer("HTTP/1.1 " + std::to_string(matched_redirect->code) + " " + request.getHttpCodeMsg(matched_redirect->code) + "\r\nLocation: " + url + "\r\n");
+            setFinished(true);
+            return this->stopHere();
+        }
+
+        this->fullPath = resolvePath(request.getPath()); // auto redirect to correct folder path
+        if (this->fullPath.empty())
+        {
+            setFinished(true);
+            return this->stopHere();
+        }
+        if (config.allowedMethods.size() > 0) // validate allwed method
+        {
+            for (size_t i = 0; i < config.allowedMethods.size(); ++i)
+            {
+                if (config.allowedMethods[i] == request.getMethod())
+                    return (true);
+            }
+            this->generateErrorPage(405);
+            return this->stopHere();
+        }
+    }
+    return (true);
 }
 
 int Client::readRequest()
@@ -204,7 +214,8 @@ int Client::readRequest()
 
     if (!request.isRequestComplete())
         return (0);
-    if (request.getMethod() == "POST" && config.allowupload.find(this->script_name) != config.allowupload.end()) {
+    if (request.getMethod() == "POST" && config.allowupload.find(this->script_name) != config.allowupload.end())
+    {
         std::string folder = config.allowupload.at(this->script_name);
         if (!saveUploadedFileBinary(folder))
             this->generateErrorPage(500);
@@ -235,7 +246,7 @@ int Client::readRequest()
             else
                 this->generateErrorPage(404);
         }
-        else 
+        else
         {
             this->setFile(new std::ifstream(fullPath.c_str(), std::ios::in | std::ios::binary));
             this->setHeaderBuffer(request.buildHttpResponse("", 200, st.st_size));
@@ -271,7 +282,7 @@ int Client::sendResponse()
         }
     }
 
-    const size_t CHUNK_SIZE = 16 * 1024;// 16 KB
+    const size_t CHUNK_SIZE = 16 * 1024; // 16 KB
     char buf[CHUNK_SIZE];
 
     if (this->isPHP() && this->sendBuffer.empty())
@@ -347,7 +358,7 @@ std::string Client::resolvePath(const std::string &path)
     std::string safePath = path;
     size_t qpos = path.find('?');
     if (qpos != std::string::npos)
-         safePath = path.substr(0, qpos);
+        safePath = path.substr(0, qpos);
 
     // Always start with /
     if (safePath[0] != '/')
@@ -384,13 +395,14 @@ std::string Client::resolvePath(const std::string &path)
 void Client::generateErrorPage(int errorCode)
 {
     auto it = config.error_pages.find(errorCode);
-    if (it != config.error_pages.end()) {
+    if (it != config.error_pages.end())
+    {
         struct stat st;
-        if (!it->second.empty() && stat(it->second.c_str(), &st) == 0 && !S_ISDIR(st.st_mode)) 
+        if (!it->second.empty() && stat(it->second.c_str(), &st) == 0 && !S_ISDIR(st.st_mode))
         {
             this->setFile(new std::ifstream(it->second.c_str(), std::ios::in | std::ios::binary));
             this->setHeaderBuffer(request.buildHttpResponse("", errorCode, st.st_size));
-            return ;
+            return;
         }
         std::cout << it->second << "\n";
     }
@@ -422,8 +434,9 @@ std::string Client::generateDirectoryListing(const std::string &dir)
 
 std::string Client::executePHP(const std::string &scriptPath)
 {
-    int outPipe[2];  // child -> parent
-    if (pipe(outPipe) != 0) return "";
+    int outPipe[2]; // child -> parent
+    if (pipe(outPipe) != 0)
+        return "";
 
     pid_t pid = fork();
     if (pid < 0)
@@ -434,7 +447,8 @@ std::string Client::executePHP(const std::string &scriptPath)
         std::string tmpFileName = request.gettmpFileName();
         // Redirect stdin and stdout
         dup2(outPipe[1], STDOUT_FILENO); // send output to parent
-        close(outPipe[0]); close(outPipe[1]);
+        close(outPipe[0]);
+        close(outPipe[1]);
 
         // Build environment
 
@@ -449,14 +463,15 @@ std::string Client::executePHP(const std::string &scriptPath)
 
         if (!tmpFileName.empty() && (request.getMethod() == "POST" || request.getMethod() == "PUT"))
         {
-            int inputfd = open(tmpFileName.c_str(), O_RDONLY);// read POST body
-            if (inputfd < 0) _exit(1);
+            int inputfd = open(tmpFileName.c_str(), O_RDONLY); // read POST body
+            if (inputfd < 0)
+                _exit(1);
             lseek(inputfd, 0, SEEK_SET);
             dup2(inputfd, STDIN_FILENO);
             close(inputfd);
             struct stat st;
             if (stat(tmpFileName.c_str(), &st) != 0)
-                _exit(1); 
+                _exit(1);
             envVec.push_back("CONTENT_LENGTH=" + std::to_string(st.st_size));
             std::string contentType = request.getContentType();
             if (contentType.empty())
@@ -465,34 +480,33 @@ std::string Client::executePHP(const std::string &scriptPath)
         }
         else
             envVec.push_back("CONTENT_LENGTH=0");
-        //query string avilable with all requests
+        // query string avilable with all requests
         envVec.push_back("QUERY_STRING=" + this->query_string);
 
         // Convert to char* array
-        std::vector<char*> envp;
+        std::vector<char *> envp;
         for (auto &s : envVec)
             envp.push_back(s.data());
         envp.push_back(nullptr);
 
         // char* argv[] = { (char*)"php-cgi", nullptr };
         std::string upload = "upload_max_filesize=" + config.php_upload_max_filesize;
-        std::string post   = "post_max_size=" + config.php_post_max_size;
+        std::string post = "post_max_size=" + config.php_post_max_size;
         std::string memory = "memory_limit=" + config.php_memory_limit;
-        char* argv[] = {
-                (char*)"php-cgi",
-                (char*)"-d", (char*)upload.c_str(),
-                (char*)"-d", (char*)post.c_str(),
-                (char*)"-d", (char*)memory.c_str(),
-                nullptr
-            };
+        char *argv[] = {
+            (char *)"php-cgi",
+            (char *)"-d", (char *)upload.c_str(),
+            (char *)"-d", (char *)post.c_str(),
+            (char *)"-d", (char *)memory.c_str(),
+            nullptr};
 
         execve("/usr/bin/php-cgi", argv, envp.data());
         _exit(1); // exec failed
     }
-    
+
     // parent
 
-    close(outPipe[1]);  // read from child
+    close(outPipe[1]); // read from child
 
     // Read PHP output
     char buffer[4096];
@@ -506,4 +520,3 @@ std::string Client::executePHP(const std::string &scriptPath)
 
     return result;
 }
-

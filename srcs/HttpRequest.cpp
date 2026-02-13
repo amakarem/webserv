@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/24 20:40:32 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/02/08 01:04:36 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/02/13 17:15:19 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -218,7 +218,8 @@ std::string HttpRequest::getContentType() const
     return this->contentType;
 }
 
-std::string HttpRequest::gettmpFileName() {
+std::string HttpRequest::gettmpFileName()
+{
     return this->tmpFileName;
 }
 
@@ -254,9 +255,10 @@ std::string HttpRequest::getMimeType()
 
 void HttpRequest::reset()
 {
-    if (!tmpFileName.empty()) {
-        tmpFile.close();              // ensure file is closed
-        unlink(tmpFileName.c_str());  // delete from disk
+    if (!tmpFileName.empty())
+    {
+        tmpFile.close();             // ensure file is closed
+        unlink(tmpFileName.c_str()); // delete from disk
         tmpFileName.clear();
     }
     raw.clear();
@@ -277,44 +279,42 @@ void HttpRequest::setcgiHeaders(std::string _cgiHeaders)
 }
 std::string HttpRequest::getcgiHeaders() { return this->cgiHeaders; };
 
-
-std::string	HttpRequest::getHttpCodeMsg(int httpCode)
+std::string HttpRequest::getHttpCodeMsg(int httpCode)
 {
-	switch (httpCode)
-	{
-		case 200:
-			return ("OK");
-		case 201:
-			return ("Created");
-		case 204:
-			return ("No Content");//Delete on a resource is successful
-		case 301:
-			return ("Moved Permanently");
-        case 302:
-            return ("Found");
-        case 303:
-            return ("See Other");
-		case 400:
-			return ("Bad Request");
-		case 403:
-			return ("Forbidden");
-		case 404:
-			return ("Not Found");
-		case 405:
-			return ("Method Not Allowed");
-		case 409:
-			return ("Conflict");
-		case 413:
-			return ("Content Too Large");
-		case 414:
-			return ("URI Too Long");
-		case 500:
-			return ("Internal Server Error");
-		default :
-			return ("Not Implemented");
-	}
+    switch (httpCode)
+    {
+    case 200:
+        return ("OK");
+    case 201:
+        return ("Created");
+    case 204:
+        return ("No Content"); // Delete on a resource is successful
+    case 301:
+        return ("Moved Permanently");
+    case 302:
+        return ("Found");
+    case 303:
+        return ("See Other");
+    case 400:
+        return ("Bad Request");
+    case 403:
+        return ("Forbidden");
+    case 404:
+        return ("Not Found");
+    case 405:
+        return ("Method Not Allowed");
+    case 409:
+        return ("Conflict");
+    case 413:
+        return ("Content Too Large");
+    case 414:
+        return ("URI Too Long");
+    case 500:
+        return ("Internal Server Error");
+    default:
+        return ("Not Implemented");
+    }
 }
-
 
 std::string HttpRequest::buildHttpResponse(const std::string &body, int httpCode, size_t fileSize)
 {
@@ -327,30 +327,30 @@ std::string HttpRequest::buildHttpResponse(const std::string &body, int httpCode
         newbody = "<h1>" + getHttpCodeMsg(httpCode) + "</h1>";
     // if (httpCode == 200)
     // {
-        std::string mime = (this->path.empty() ? "text/html" : getMimeType());
-        oss << "HTTP/1.1 " << httpCode << " " << getHttpCodeMsg(httpCode) << "\r\n";
-        if (fileSize > 0)
-            oss << "Content-Length: " << fileSize << "\r\n"; // for large files
-        else
-            oss << "Content-Length: " << newbody.length() << "\r\n"; // small body
-        if (!getcgiHeaders().empty())
+    std::string mime = (this->path.empty() ? "text/html" : getMimeType());
+    oss << "HTTP/1.1 " << httpCode << " " << getHttpCodeMsg(httpCode) << "\r\n";
+    if (fileSize > 0)
+        oss << "Content-Length: " << fileSize << "\r\n"; // for large files
+    else
+        oss << "Content-Length: " << newbody.length() << "\r\n"; // small body
+    if (!getcgiHeaders().empty())
+    {
+        std::istringstream hs(cgiHeaders);
+        std::string line;
+        while (std::getline(hs, line))
         {
-            std::istringstream hs(cgiHeaders);
-            std::string line;
-            while (std::getline(hs, line))
-            {
-                if (!line.empty() && line.back() == '\r')
-                    line.pop_back();
-                oss << line + "\r\n";
-            }
+            if (!line.empty() && line.back() == '\r')
+                line.pop_back();
+            oss << line + "\r\n";
         }
-        else
-            oss << "Content-Type: " << mime << "\r\n";
-        oss << "Connection: " << connectionHeader << "\r\n";
-        oss << "\r\n";
+    }
+    else
+        oss << "Content-Type: " << mime << "\r\n";
+    oss << "Connection: " << connectionHeader << "\r\n";
+    oss << "\r\n";
 
-        if (newbody.length() > 0)
-            oss << newbody; // append body only if small message
+    if (newbody.length() > 0)
+        oss << newbody; // append body only if small message
     // }
     // else if (httpCode == 403)
     // {

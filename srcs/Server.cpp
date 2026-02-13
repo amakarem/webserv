@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/09 18:32:26 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/02/07 21:53:29 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/02/13 17:15:30 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -33,7 +33,8 @@ static std::string strtoupper(const std::string &s)
     std::string upperString;
     upperString.resize(s.size());
 
-    for (size_t i = 0; i < s.size(); i++) {
+    for (size_t i = 0; i < s.size(); i++)
+    {
         upperString[i] = std::toupper((unsigned char)s[i]);
     }
     return upperString;
@@ -313,7 +314,7 @@ void Server::validateConfig()
         else
         {
             std::cout << "Server config OK\n";
-            std::cout << "  Server: " << it->serverName  << "\n";
+            std::cout << "  Server: " << it->serverName << "\n";
             std::cout << "  Port: " << it->port << "\n";
             std::cout << "  Root: " << it->root << "\n";
             std::cout << "  Index files: ";

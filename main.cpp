@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/09 18:26:46 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/02/04 23:31:25 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/02/13 17:16:09 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -34,7 +34,7 @@ int main(int argc, char **argv)
     }
     catch (std::exception &e)
     {
-        std::cerr <<  e.what();
+        std::cerr << e.what();
     }
     return (0);
 }

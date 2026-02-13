@@ -6,12 +6,12 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/24 20:38:20 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/02/08 00:07:37 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/02/13 17:16:00 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef CLIENT_HPP
-# define CLIENT_HPP
+#define CLIENT_HPP
 
 #include <fstream>
 #include <unistd.h>
@@ -28,60 +28,60 @@
 
 class Client
 {
-    private:
-        int fd;                      // client socket
-        std::ifstream* file;          // pointer to open file
-        std::string headerBuffer;     // HTTP headers to send
-        bool headersSent;             // headers already sent
-        bool finished;                // done sending everything
-        long lastActivity;
-        const ServerConfig& config;
-        std::string fullPath;
-        std::string recvBuffer;
-        std::string body;
-        size_t contentLength;
-        bool headersParsed;
-        bool bodyComplete;
-        HttpRequest request;
-        bool PHP;
-        std::string sendBuffer;
-        std::string script_name;
-        std::string query_string;
+private:
+    int fd;                   // client socket
+    std::ifstream *file;      // pointer to open file
+    std::string headerBuffer; // HTTP headers to send
+    bool headersSent;         // headers already sent
+    bool finished;            // done sending everything
+    long lastActivity;
+    const ServerConfig &config;
+    std::string fullPath;
+    std::string recvBuffer;
+    std::string body;
+    size_t contentLength;
+    bool headersParsed;
+    bool bodyComplete;
+    HttpRequest request;
+    bool PHP;
+    std::string sendBuffer;
+    std::string script_name;
+    std::string query_string;
 
-    public:
-        Client(int fd, const ServerConfig& config);
-        ~Client();
-        int getFd() const;
+public:
+    Client(int fd, const ServerConfig &config);
+    ~Client();
+    int getFd() const;
 
-        bool isKeepAlive() const;
-        bool isRequestComplete() const;
-        
-        void setFile(std::ifstream* f);
-        std::ifstream* getFile() const;
+    bool isKeepAlive() const;
+    bool isRequestComplete() const;
 
-        void setHeaderBuffer(const std::string& buf);
-        std::string& getHeaderBuffer();
+    void setFile(std::ifstream *f);
+    std::ifstream *getFile() const;
 
-        void setlastActivity();
-        long getlastActivity() const;
-        bool isTimeout() const;
-        bool isPHP() const;
-        
-        void setHeadersSent(bool val);
-        bool isHeadersSent() const;
+    void setHeaderBuffer(const std::string &buf);
+    std::string &getHeaderBuffer();
 
-        void setFinished(bool val);
-        bool isFinished() const;
+    void setlastActivity();
+    long getlastActivity() const;
+    bool isTimeout() const;
+    bool isPHP() const;
 
-        std::string resolvePath(const std::string &path);
-        void generateErrorPage(int errorCode);
-        std::string generateDirectoryListing(const std::string &dir);
-        bool stopHere();
-        bool continueAfterHeader();
-        int readRequest();
-        int sendResponse();
-        bool saveUploadedFileBinary(const std::string &uploadFolder);
-        std::string executePHP(const std::string &scriptPath);
-        void resetRequest();
+    void setHeadersSent(bool val);
+    bool isHeadersSent() const;
+
+    void setFinished(bool val);
+    bool isFinished() const;
+
+    std::string resolvePath(const std::string &path);
+    void generateErrorPage(int errorCode);
+    std::string generateDirectoryListing(const std::string &dir);
+    bool stopHere();
+    bool continueAfterHeader();
+    int readRequest();
+    int sendResponse();
+    bool saveUploadedFileBinary(const std::string &uploadFolder);
+    std::string executePHP(const std::string &scriptPath);
+    void resetRequest();
 };
 #endif
