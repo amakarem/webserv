@@ -1,12 +1,89 @@
-hello world
-<img src="42_Logo.svg.png">
-<ul>
-<li><a href="a.html">sub page a</a></li>
-<li><a href="subfolder/page.html">sub page inside sub folder</a></li>
-<li><a href="upload.html">test upload</a></li>
-<li><a href="upload.php">list uploaded files</a></li>
-<li><a href="info.php">PHP test</a></li>
-<li><a href="redirect">redirect test</a></li>
-<li><a href="redirect?xxxx=true">redirect with query string test</a></li>
-<li><a href="withoutindex">folder without index</a></li>
-</ul>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Webserv</title>
+
+<style>
+body {
+    margin: 0;
+    font-family: Arial, Helvetica, sans-serif;
+    background: #0f172a;
+    color: #e2e8f0;
+}
+
+.container {
+    max-width: 700px;
+    margin: 80px auto;
+    padding: 40px;
+    background: #1e293b;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+    text-align: center;
+}
+
+h1 {
+    margin-bottom: 10px;
+    font-size: 32px;
+    color: #38bdf8;
+}
+
+img {
+    width: 120px;
+    margin: 20px 0;
+}
+
+ul {
+    list-style: none;
+    padding: 0;
+}
+
+li {
+    margin: 12px 0;
+}
+
+a {
+    text-decoration: none;
+    color: #60a5fa;
+    font-weight: 600;
+    transition: 0.2s;
+}
+
+a:hover {
+    color: #ffffff;
+    letter-spacing: 1px;
+}
+
+.footer {
+    margin-top: 30px;
+    font-size: 13px;
+    opacity: 0.6;
+}
+</style>
+</head>
+
+<body>
+<div class="container">
+
+    <h1>🚀 Webserv</h1>
+
+    <img src="42_Logo.svg.png" alt="42 Logo">
+
+    <ul>
+        <li><a href="a.html">Sub Page A</a></li>
+        <li><a href="subfolder/page.html">Sub Page Inside Subfolder</a></li>
+        <li><a href="upload.html">Upload Test</a></li>
+        <li><a href="upload.php">List Uploaded Files</a></li>
+        <li><a href="info.php">PHP Test</a></li>
+        <li><a href="redirect">Redirect Test</a></li>
+        <li><a href="redirect?xxxx=true">Redirect With Query</a></li>
+        <li><a href="withoutindex">Folder Without Index</a></li>
+    </ul>
+
+    <div class="footer">
+        42 Webserv Project
+    </div>
+
+</div>
+</body>
+</html>
