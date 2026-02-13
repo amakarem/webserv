@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/24 20:40:32 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/02/13 17:34:39 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/02/13 17:36:40 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -44,9 +44,7 @@ void HttpRequest::decodePath()
 
     for (size_t i = 0; i < input.size(); ++i)
     {
-        if (input[i] == '%' && i + 2 < input.size()
-            && std::isxdigit(input[i + 1])
-            && std::isxdigit(input[i + 2]))
+        if (input[i] == '%' && i + 2 < input.size() && std::isxdigit(input[i + 1]) && std::isxdigit(input[i + 2]))
         {
             std::string hex = input.substr(i + 1, 2);
             char decoded = static_cast<char>(std::strtol(hex.c_str(), NULL, 16));
@@ -54,13 +52,9 @@ void HttpRequest::decodePath()
             i += 2; // skip the two hex digits
         }
         else if (input[i] == '+')
-        {
             output += ' ';
-        }
         else
-        {
             output += input[i];
-        }
     }
     this->path = output;
 }
