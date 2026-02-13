@@ -71,7 +71,7 @@ $files = array_diff(scandir($folder), array('.', '..'));
             <?php $fullPath = $folder . "/" . $file; ?>
             <?php if (is_file($fullPath)): ?>
                 <tr>
-                    <td><?= htmlspecialchars($file) ?></td>
+                    <td><a href="uploads/<?= htmlspecialchars($file) ?>"><?= htmlspecialchars($file) ?></a></td>
                     <td><?= filesize($fullPath) ?></td>
                     <td>
                         <form method="POST" style="display:inline">
