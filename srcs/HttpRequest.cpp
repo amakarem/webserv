@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/24 20:40:32 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/02/23 15:18:48 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/02/23 16:18:27 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -292,7 +292,7 @@ std::string HttpRequest::getMimeType()
     if (dot == std::string::npos)
         return "text/html"; // default
     std::string ext = this->path.substr(dot + 1);
-    if (ext == "html" || ext == "htm" || ext == "php")
+    if (ext == "html" || ext == "htm" || ext == "php" || ext == "py")
         return "text/html";
     if (ext == "css")
         return "text/css";
@@ -408,7 +408,11 @@ std::string HttpRequest::buildHttpResponse(const std::string &body, int httpCode
         }
     }
     else
+    {
+        if (!getrawCookieHeader().empty())
+            oss << "Set-Cookie: " << getrawCookieHeader() << "\r\n";
         oss << "Content-Type: " << mime << "\r\n";
+    }
     oss << "Connection: " << connectionHeader << "\r\n";
     oss << "\r\n";
 

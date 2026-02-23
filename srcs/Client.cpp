@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/24 20:41:35 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/02/23 15:10:03 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/02/23 16:36:17 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -72,6 +72,7 @@ Client::Client(int fd, const ServerConfig &config) : fd(fd), config(config)
     this->bodyComplete = false;
     this->contentLength = 0;
     this->PHP = false;
+    this->Py = false;
     this->query_string = "";
     this->request.setTmpDir(config.tmpdir);
 }
@@ -106,6 +107,8 @@ bool Client::isHeadersSent() const { return headersSent; }
 void Client::setFinished(bool val) { finished = val; }
 bool Client::isFinished() const { return finished; }
 bool Client::isPHP() const { return PHP; }
+bool Client::isPy() const { return Py; }
+bool Client::isCGI() const { return isPHP() || isPy(); }
 
 void Client::resetRequest() { return request.reset(); }
 
@@ -199,7 +202,7 @@ int Client::readRequest()
         if (bytesRead < 0) // Error
         {
             // if (errno == EAGAIN || errno == EWOULDBLOCK)
-            break;  // no data yet, still alive
+            break; // no data yet, still alive
             // return (1); // real error → disconnect
         }
         if (!request.append(buffer, bytesRead))
@@ -225,14 +228,21 @@ int Client::readRequest()
     struct stat st;
     if (!fullPath.empty() && stat(fullPath.c_str(), &st) == 0 && !S_ISDIR(st.st_mode))
     {
-        if (this->isPHP())
+        if (this->isCGI())
         {
-            std::string phpOut = executePHP(fullPath);
-            size_t pos = phpOut.find("\r\n\r\n");
-            if (pos != std::string::npos)
+            std::string cgiOut = executeCGI(fullPath);
+            size_t pos = cgiOut.find("\r\n\r\n");
+            if (this->isPHP() && pos != std::string::npos)
             {
-                request.setcgiHeaders(phpOut.substr(0, pos));
-                this->sendBuffer = phpOut.substr(pos + 4);
+                request.setcgiHeaders(cgiOut.substr(0, pos));
+                this->sendBuffer = cgiOut.substr(pos + 4);
+            }
+            else if (this->isPy())
+            {
+                if (pos == std::string::npos)
+                    pos = cgiOut.find("\n\n");
+                request.setcgiHeaders(cgiOut.substr(0, pos));
+                this->sendBuffer = cgiOut.substr(pos + (cgiOut[pos] == '\r' ? 4 : 2));
             }
             this->setHeaderBuffer(request.buildHttpResponse("", 200, this->sendBuffer.size()));
         }
@@ -287,13 +297,13 @@ int Client::sendResponse()
     const size_t CHUNK_SIZE = 16 * 1024; // 16 KB
     char buf[CHUNK_SIZE];
 
-    if (this->isPHP() && this->sendBuffer.empty())
+    if (this->isCGI() && this->sendBuffer.empty())
     {
         // error running PHP
         this->generateErrorPage(500);
         return 1;
     }
-    else if (this->isPHP() && !this->sendBuffer.empty())
+    else if (this->isCGI() && !this->sendBuffer.empty())
     {
         size_t toSend = CHUNK_SIZE;
         if (this->sendBuffer.size() < CHUNK_SIZE)
@@ -314,7 +324,7 @@ int Client::sendResponse()
             this->setFinished(true);
         return 0;
     }
-    else if (!this->isPHP() && this->getFile())
+    else if (!this->isCGI() && this->getFile())
     {
         if (this->getFile() && !this->getFile()->eof())
         {
@@ -331,7 +341,7 @@ int Client::sendResponse()
             }
             if (bytesSent < bytesRead)
                 return (1);
-            this->setlastActivity();                
+            this->setlastActivity();
         }
 
         if (this->getFile() && this->getFile()->eof())
@@ -395,6 +405,8 @@ std::string Client::resolvePath(const std::string &path)
     std::cout << fullPath << "\n";
     if (fullPath.size() > 4 && fullPath.substr(fullPath.size() - 4) == ".php")
         this->PHP = true;
+    else if (fullPath.size() > 3 && fullPath.substr(fullPath.size() - 3) == ".py")
+        this->Py = true;
     return fullPath;
 }
 
@@ -438,7 +450,7 @@ std::string Client::generateDirectoryListing(const std::string &dir)
     return oss.str();
 }
 
-std::string Client::executePHP(const std::string &scriptPath)
+std::string Client::executeCGI(const std::string &scriptPath)
 {
     int outPipe[2]; // child -> parent
     if (pipe(outPipe) != 0)
@@ -497,18 +509,28 @@ std::string Client::executePHP(const std::string &scriptPath)
             envp.push_back(s.data());
         envp.push_back(nullptr);
 
-        // char* argv[] = { (char*)"php-cgi", nullptr };
-        std::string upload = "upload_max_filesize=" + config.php_upload_max_filesize;
-        std::string post = "post_max_size=" + config.php_post_max_size;
-        std::string memory = "memory_limit=" + config.php_memory_limit;
-        char *argv[] = {
-            (char *)"php-cgi",
-            (char *)"-d", (char *)upload.c_str(),
-            (char *)"-d", (char *)post.c_str(),
-            (char *)"-d", (char *)memory.c_str(),
-            nullptr};
+        if (this->isPHP())
+        {
+            std::string upload = "upload_max_filesize=" + config.php_upload_max_filesize;
+            std::string post = "post_max_size=" + config.php_post_max_size;
+            std::string memory = "memory_limit=" + config.php_memory_limit;
+            char *argv[] = {
+                (char *)"php-cgi",
+                (char *)"-d", (char *)upload.c_str(),
+                (char *)"-d", (char *)post.c_str(),
+                (char *)"-d", (char *)memory.c_str(),
+                nullptr};
 
-        execve("/usr/bin/php-cgi", argv, envp.data());
+            execve("/usr/bin/php-cgi", argv, envp.data());
+        }
+        else if (this->isPy())
+        {
+            char *argv[] = {
+                (char *)scriptPath.c_str(),
+                nullptr};
+
+            execve(scriptPath.c_str(), argv, envp.data());
+        }
         _exit(1); // exec failed
     }
 

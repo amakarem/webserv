@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/24 20:38:20 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/02/13 17:16:00 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/02/23 15:29:59 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -44,6 +44,7 @@ private:
     bool bodyComplete;
     HttpRequest request;
     bool PHP;
+    bool Py;
     std::string sendBuffer;
     std::string script_name;
     std::string query_string;
@@ -66,6 +67,8 @@ public:
     long getlastActivity() const;
     bool isTimeout() const;
     bool isPHP() const;
+    bool isPy() const;
+    bool isCGI() const;
 
     void setHeadersSent(bool val);
     bool isHeadersSent() const;
@@ -81,7 +84,7 @@ public:
     int readRequest();
     int sendResponse();
     bool saveUploadedFileBinary(const std::string &uploadFolder);
-    std::string executePHP(const std::string &scriptPath);
+    std::string executeCGI(const std::string &scriptPath);
     void resetRequest();
 };
 #endif
