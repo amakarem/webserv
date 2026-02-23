@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Client.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
+/*   By: blohrer <blohrer@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/24 20:41:35 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/02/23 18:18:17 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/02/23 19:57:36 by blohrer          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -334,7 +334,7 @@ int Client::sendResponse()
     // Send headers
     if (!this->getHeaderBuffer().empty())
     {
-        ssize_t n = send(fd, this->getHeaderBuffer().c_str(), this->getHeaderBuffer().length(), 0);
+        ssize_t n = send(fd, this->getHeaderBuffer().c_str(), this->getHeaderBuffer().length(), MSG_NOSIGNAL);
         if (n < 0)
         {
             // if (errno == EAGAIN || errno == EWOULDBLOCK)
@@ -361,7 +361,7 @@ int Client::sendResponse()
         size_t toSend = CHUNK_SIZE;
         if (this->sendBuffer.size() < CHUNK_SIZE)
             toSend = this->sendBuffer.size();
-        ssize_t bytesSent = send(fd, this->sendBuffer.c_str(), toSend, 0);
+        ssize_t bytesSent = send(fd, this->sendBuffer.c_str(), toSend, MSG_NOSIGNAL);
         if (bytesSent < 0)
         {
             // if (errno == EAGAIN || errno == EWOULDBLOCK)
@@ -385,7 +385,7 @@ int Client::sendResponse()
             std::streamsize bytesRead = this->getFile()->gcount();
             if (bytesRead <= 0)
                 return (1);
-            ssize_t bytesSent = send(fd, buf, bytesRead, 0);
+            ssize_t bytesSent = send(fd, buf, bytesRead, MSG_NOSIGNAL);
             if (bytesSent < 0)
             {
                 // if (errno == EAGAIN || errno == EWOULDBLOCK)
