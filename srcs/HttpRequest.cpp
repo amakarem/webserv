@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/24 20:40:32 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/02/23 15:09:45 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/02/23 15:18:48 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -59,40 +59,40 @@ void HttpRequest::decodePath()
     this->path = output;
 }
 
-void HttpRequest::parseCookies(const std::string& header)
-{
-    std::stringstream ss(header);
-    std::string pair;
+// void HttpRequest::parseCookies(const std::string& header)
+// {
+//     std::stringstream ss(header);
+//     std::string pair;
 
-    while (std::getline(ss, pair, ';'))
-    {
-        size_t pos = pair.find('=');
-        if (pos == std::string::npos)
-            continue;
+//     while (std::getline(ss, pair, ';'))
+//     {
+//         size_t pos = pair.find('=');
+//         if (pos == std::string::npos)
+//             continue;
 
-        std::string key = pair.substr(0, pos);
-        std::string value = pair.substr(pos + 1);
+//         std::string key = pair.substr(0, pos);
+//         std::string value = pair.substr(pos + 1);
 
-        // trim spaces
-        key.erase(0, key.find_first_not_of(" "));
-        value.erase(0, value.find_first_not_of(" "));
+//         // trim spaces
+//         key.erase(0, key.find_first_not_of(" "));
+//         value.erase(0, value.find_first_not_of(" "));
 
-        cookies[key] = value;
-    }
-}
+//         cookies[key] = value;
+//     }
+// }
 
 std::string HttpRequest::getrawCookieHeader() const
 {
     return rawCookieHeader;
 }
 
-std::string HttpRequest::getCookie(const std::string& key) const
-{
-    std::map<std::string, std::string>::const_iterator it = cookies.find(key);
-    if (it != cookies.end())
-        return it->second;
-    return "";
-}
+// std::string HttpRequest::getCookie(const std::string& key) const
+// {
+//     std::map<std::string, std::string>::const_iterator it = cookies.find(key);
+//     if (it != cookies.end())
+//         return it->second;
+//     return "";
+// }
 
 bool HttpRequest::append(const char *data, size_t len)
 {
@@ -123,7 +123,7 @@ bool HttpRequest::append(const char *data, size_t len)
             if (line.compare(0, 7, "Cookie:") == 0)
             {
                 rawCookieHeader = cleanString(line.substr(7));
-                parseCookies(rawCookieHeader);
+                // parseCookies(rawCookieHeader);
             }
         }
         // HTTP/1.1 default keep-alive
