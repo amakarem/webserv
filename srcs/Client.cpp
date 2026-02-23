@@ -6,11 +6,22 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/24 20:41:35 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/02/23 16:36:17 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/02/23 17:33:14 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Client.hpp"
+
+std::string getFirstLine(const std::string &s)
+{
+    size_t pos = s.find('\n');
+    std::string line = (pos == std::string::npos) ? s : s.substr(0, pos);
+
+    if (!line.empty() && line.back() == '\r')
+        line.pop_back();
+
+    return line;
+}
 
 bool Client::saveUploadedFileBinary(const std::string &uploadFolder)
 {
@@ -42,7 +53,8 @@ bool Client::saveUploadedFileBinary(const std::string &uploadFolder)
         }
     }
     line.clear();
-    headers.clear();
+    headers = getFirstLine(headers);
+    // headers.clear();
     if (filename.empty())
         return false;
     // Ensure upload folder exists
@@ -54,8 +66,30 @@ bool Client::saveUploadedFileBinary(const std::string &uploadFolder)
 
     // Write remaining content (binary-safe)
     char buffer[8192];
+    std::string carry;
+
     while (in.read(buffer, sizeof(buffer)) || in.gcount() > 0)
-        out.write(buffer, in.gcount());
+    {
+        size_t n = in.gcount();
+        std::string data = carry + std::string(buffer, n);
+
+        // search for stop string
+        size_t pos = data.find(headers);
+        if (pos != std::string::npos)
+        {
+            out.write(data.data(), pos); // write only before headers
+            break; // stop reading further
+        }
+
+        // no match -> write whole data
+        out.write(data.data(), data.size());
+
+        // keep tail for next chunk (for partial match)
+        if (data.size() >= headers.size())
+            carry = data.substr(data.size() - headers.size());
+        else
+            carry = data;
+    }
 
     out.close();
     setHeaderBuffer(request.buildHttpResponse("<h1>" + filename + " uploaded</h1>", 200, 0));
