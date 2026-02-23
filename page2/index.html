@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Webserv</title>
+
+<style>
+body {
+    margin: 0;
+    font-family: "Poppins", Arial, sans-serif;
+    background: linear-gradient(135deg, #1e1b4b, #0f0f1a);
+    color: #f3f4f6;
+}
+
+.container {
+    max-width: 720px;
+    margin: 90px auto;
+    padding: 50px;
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(14px);
+    border-radius: 20px;
+    border: 1px solid rgba(255,255,255,0.1);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+    text-align: center;
+}
+
+h1 {
+    margin-bottom: 15px;
+    font-size: 36px;
+    color: #c084fc;
+    letter-spacing: 2px;
+}
+
+img {
+    width: 110px;
+    margin: 25px 0;
+    filter: drop-shadow(0 0 10px rgba(192,132,252,0.4));
+}
+
+ul {
+    list-style: none;
+    padding: 0;
+    margin-top: 30px;
+}
+
+li {
+    margin: 16px 0;
+}
+
+a {
+    display: inline-block;
+    padding: 10px 18px;
+    text-decoration: none;
+    color: #e9d5ff;
+    font-weight: 600;
+    border-radius: 12px;
+    background: rgba(192,132,252,0.1);
+    border: 1px solid rgba(192,132,252,0.3);
+    transition: 0.25s ease;
+}
+
+a:hover {
+    background: rgba(192,132,252,0.25);
+    color: #ffffff;
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(192,132,252,0.4);
+}
+
+.footer {
+    margin-top: 40px;
+    font-size: 13px;
+    opacity: 0.6;
+    letter-spacing: 1px;
+}
+</style>
+</head>
+
+<body>
+<div class="container">
+
+    <h1> Webserv Hub</h1>
+
+    <img src="42_Logo.svg.png" alt="42 Logo">
+
+    <ul>
+        <li><a href="a.html">Sub Page A</a></li>
+        <li><a href="subfolder/page.html">Sub Page Inside Subfolder</a></li>
+        <li><a href="upload.html">Upload Test</a></li>
+        <li><a href="upload.php">List Uploaded Files</a></li>
+        <li><a href="info.php">CGI PHP Test</a></li>
+        <li><a href="redirect">Redirect Test</a></li>
+        <li><a href="redirect?xxxx=true">Redirect With Query</a></li>
+        <li><a href="withoutindex">Folder Without Index</a></li>
+        <li><a href="session.php">Session test</a></li>
+        <li><a href="test.py">CGI Python test</a></li>
+    </ul>
+
+    <div class="footer">
+        42 Webserv Project • Purple Theme
+    </div>
+
+</div>
+</body>
+</html>

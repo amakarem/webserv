@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Sub Page</title>
+
+<style>
+body {
+    margin: 0;
+    font-family: "Poppins", Arial, sans-serif;
+    background: linear-gradient(135deg, #1e1b4b, #0f0f1a);
+    color: #f3f4f6;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+.container {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(14px);
+    border-radius: 20px;
+    border: 1px solid rgba(255,255,255,0.1);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+    padding: 50px;
+    text-align: center;
+    width: 460px;
+}
+
+h1 {
+    margin-bottom: 20px;
+    font-size: 26px;
+    color: #c084fc;
+    letter-spacing: 1px;
+}
+
+p {
+    opacity: 0.7;
+    margin-bottom: 25px;
+}
+
+a {
+    display: inline-block;
+    padding: 10px 20px;
+    text-decoration: none;
+    color: #e9d5ff;
+    font-weight: 600;
+    border-radius: 12px;
+    background: rgba(192,132,252,0.1);
+    border: 1px solid rgba(192,132,252,0.3);
+    transition: 0.25s ease;
+}
+
+a:hover {
+    background: rgba(192,132,252,0.25);
+    color: #ffffff;
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(192,132,252,0.4);
+}
+
+hr {
+    border: none;
+    height: 1px;
+    background: rgba(255,255,255,0.1);
+    margin: 25px 0;
+}
+</style>
+</head>
+
+<body>
+<div class="container">
+    <h1>📂 Subfolder Page</h1>
+    <p>This page lives inside a subdirectory.</p>
+
+    <hr>
+
+    <a href="../">⬅ Back to Index</a>
+</div>
+</body>
+</html>

@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Upload Center</title>
+
+<style>
+body {
+    margin: 0;
+    font-family: "Poppins", Arial, sans-serif;
+    background: linear-gradient(135deg, #1e1b4b, #0f0f1a);
+    color: #f3f4f6;
+}
+
+.container {
+    max-width: 750px;
+    margin: 80px auto;
+    padding: 50px;
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(14px);
+    border-radius: 20px;
+    border: 1px solid rgba(255,255,255,0.1);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+}
+
+h1 {
+    color: #c084fc;
+    font-size: 26px;
+    margin-bottom: 15px;
+}
+
+label {
+    display: block;
+    margin-top: 15px;
+    margin-bottom: 6px;
+    opacity: 0.8;
+}
+
+input[type="text"],
+input[type="file"] {
+    width: 100%;
+    padding: 10px;
+    border-radius: 10px;
+    border: 1px solid rgba(192,132,252,0.3);
+    background: rgba(255,255,255,0.05);
+    color: #ffffff;
+    outline: none;
+}
+
+input[type="text"]:focus,
+input[type="file"]:focus {
+    border-color: #c084fc;
+    box-shadow: 0 0 10px rgba(192,132,252,0.4);
+}
+
+input[type="submit"],
+button {
+    margin-top: 15px;
+    padding: 10px 18px;
+    border-radius: 12px;
+    border: 1px solid rgba(192,132,252,0.3);
+    background: rgba(192,132,252,0.1);
+    color: #e9d5ff;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.25s ease;
+}
+
+input[type="submit"]:hover,
+button:hover {
+    background: rgba(192,132,252,0.25);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(192,132,252,0.4);
+}
+
+a {
+    color: #e9d5ff;
+    text-decoration: none;
+    font-weight: 600;
+    display: inline-block;
+    margin-top: 10px;
+    padding: 8px 14px;
+    border-radius: 10px;
+    background: rgba(192,132,252,0.1);
+    border: 1px solid rgba(192,132,252,0.3);
+    transition: 0.25s;
+}
+
+a:hover {
+    background: rgba(192,132,252,0.25);
+    color: white;
+}
+
+hr {
+    border: none;
+    height: 1px;
+    background: rgba(255,255,255,0.1);
+    margin: 30px 0;
+}
+
+pre {
+    margin-top: 15px;
+    padding: 15px;
+    border-radius: 12px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+.footer {
+    text-align: center;
+    margin-top: 40px;
+    opacity: 0.6;
+    font-size: 13px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>📝 POST Request</h1>
+    <form action="/info.php?test=true" method="POST">
+        <label for="username">Username</label>
+        <input type="text" name="username" id="username">
+        <input type="submit" value="Send Text">
+    </form>
+
+    <hr>
+
+    <h1>📤 Direct Upload</h1>
+    <form action="/upload_request" method="POST" enctype="multipart/form-data">
+        <label for="file1">Choose file</label>
+        <input type="file" name="file" id="file1">
+        <input type="submit" name="submit" value="Upload File">
+    </form>
+
+    <hr>
+
+    <h1>🐘 PHP Upload</h1>
+    <form action="/upload.php" method="POST" enctype="multipart/form-data">
+        <label for="file2">Choose file</label>
+        <input type="file" name="file" id="file2">
+        <input type="submit" name="submit" value="Upload File">
+    </form>
+
+    <hr>
+
+    <form action="/upload.php?debug=true" method="POST" enctype="multipart/form-data">
+        <label for="file3">Upload with Debug</label>
+        <input type="file" name="file" id="file3">
+        <input type="submit" name="submit" value="Upload File with Debug">
+    </form>
+
+    <hr>
+
+    <a href="upload.php">📂 View Uploaded Files</a>
+
+    <hr>
+
+    <h1>🗑 DELETE Request</h1>
+
+    <label for="filePath">File to delete</label>
+    <input type="text" id="filePath" value="test.txt">
+    <button id="deleteBtn">Delete File</button>
+
+    <pre id="result"></pre>
+
+    <div class="footer">
+        <a href="/">⬅ Back to Index</a>
+    </div>
+
+</div>
+
+<script>
+document.getElementById('deleteBtn').addEventListener('click', function() {
+    const path = document.getElementById('filePath').value;
+
+    fetch('/' + path, { method: 'DELETE' })
+    .then(response => response.text())
+    .then(data => {
+        document.getElementById('result').textContent = data;
+    })
+    .catch(err => {
+        document.getElementById('result').textContent = 'Error: ' + err;
+    });
+});
+</script>
+
+</body>
+</html>

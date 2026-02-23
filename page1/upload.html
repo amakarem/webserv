@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Upload Test | Webserv</title>
+
+<style>
+body {
+    margin: 0;
+    font-family: Arial, Helvetica, sans-serif;
+    background: #0f172a;
+    color: #e2e8f0;
+}
+
+.container {
+    max-width: 900px;
+    margin: 80px auto;
+    padding: 40px;
+    background: #1e293b;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+}
+
+.header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.header h1 {
+    margin: 0 0 8px 0;
+    font-size: 32px;
+    color: #38bdf8;
+}
+
+.header p {
+    margin: 0;
+    opacity: 0.7;
+    font-size: 14px;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 18px;
+}
+
+.card {
+    background: #0b1220;
+    border: 1px solid rgba(96,165,250,0.18);
+    border-radius: 12px;
+    padding: 18px;
+}
+
+.card h2 {
+    margin: 0 0 12px 0;
+    font-size: 18px;
+    color: #60a5fa;
+}
+
+label {
+    display: block;
+    margin: 10px 0 6px 0;
+    font-size: 14px;
+    opacity: 0.9;
+}
+
+input[type="text"],
+input[type="file"] {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(226,232,240,0.12);
+    background: #0f172a;
+    color: #e2e8f0;
+    outline: none;
+}
+
+input[type="text"]:focus,
+input[type="file"]:focus {
+    border-color: rgba(56,189,248,0.6);
+    box-shadow: 0 0 0 3px rgba(56,189,248,0.15);
+}
+
+.row {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 12px;
+}
+
+.btn {
+    appearance: none;
+    border: none;
+    border-radius: 10px;
+    padding: 10px 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: 0.2s;
+    background: #38bdf8;
+    color: #0f172a;
+    text-decoration: none; /* important for <a> */
+    display: inline-block;
+}
+
+.btn:hover {
+    background: #60a5fa;
+    transform: translateY(-1px);
+}
+
+.btn-secondary {
+    background: transparent;
+    color: #60a5fa;
+    border: 1px solid rgba(96,165,250,0.35);
+}
+
+.btn-secondary:hover {
+    background: rgba(96,165,250,0.12);
+    color: #ffffff;
+    transform: translateY(-1px);
+}
+
+hr {
+    border: none;
+    border-top: 1px solid rgba(226,232,240,0.12);
+    margin: 16px 0;
+}
+
+pre {
+    margin-top: 12px;
+    padding: 12px;
+    background: #0f172a;
+    border: 1px solid rgba(226,232,240,0.12);
+    border-radius: 12px;
+    min-height: 48px;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+.bottom-nav {
+    margin-top: 26px;
+    padding-top: 18px;
+    border-top: 1px solid rgba(226,232,240,0.12);
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.footer {
+    text-align: center;
+    margin-top: 18px;
+    font-size: 13px;
+    opacity: 0.6;
+}
+</style>
+</head>
+
+<body>
+<div class="container">
+
+    <div class="header">
+        <h1>📦 Upload & Request Tester</h1>
+        <p>POST / multipart / PHP upload / DELETE</p>
+    </div>
+
+    <div class="grid">
+
+        <div class="card">
+            <h2>📝 Test POST Request</h2>
+            <form action="/info.php?test=true" method="POST">
+                <label for="username">Username</label>
+                <input type="text" name="username" id="username" placeholder="e.g. Max">
+                <div class="row">
+                    <input class="btn" type="submit" value="Send Text">
+                </div>
+            </form>
+        </div>
+
+        <div class="card">
+            <h2>📤 Test DIRECT Upload</h2>
+            <form action="/upload_request" method="POST" enctype="multipart/form-data">
+                <label for="file_direct">Choose file to upload</label>
+                <input type="file" name="file" id="file_direct">
+                <div class="row">
+                    <input class="btn" type="submit" name="submit" value="Upload File">
+                </div>
+            </form>
+        </div>
+
+        <div class="card">
+            <h2>🐘 Test Upload with PHP</h2>
+            <form action="/upload.php" method="POST" enctype="multipart/form-data">
+                <label for="file_php">Choose file to upload</label>
+                <input type="file" name="file" id="file_php">
+                <div class="row">
+                    <input class="btn" type="submit" name="submit" value="Upload File">
+                </div>
+            </form>
+
+            <hr>
+
+            <form action="/upload.php?debug=true" method="POST" enctype="multipart/form-data">
+                <label for="file_php_dbg">Choose file to upload with debug</label>
+                <input type="file" name="file" id="file_php_dbg">
+                <div class="row">
+                    <input class="btn" type="submit" name="submit" value="Upload File with debug">
+                </div>
+            </form>
+        </div>
+
+        <div class="card">
+            <h2>🗑️ Test DELETE Request</h2>
+
+            <label for="filePath">File to delete (relative path)</label>
+            <input type="text" id="filePath" value="test.txt" placeholder="e.g. uploads/test.txt">
+
+            <div class="row">
+                <button class="btn" id="deleteBtn" type="button">Delete File</button>
+                <button class="btn btn-secondary" id="clearBtn" type="button">Clear Output</button>
+            </div>
+
+            <pre id="result"></pre>
+        </div>
+
+    </div>
+
+    <div class="bottom-nav">
+        <a class="btn btn-secondary" href="upload.php">📂 List uploaded files</a>
+        <a class="btn" href="/">⬅ Back to Index</a>
+    </div>
+
+    <div class="footer">
+        42 Webserv Project
+    </div>
+
+</div>
+
+<script>
+document.getElementById('deleteBtn').addEventListener('click', function() {
+    const path = document.getElementById('filePath').value;
+
+    fetch('/' + path, { method: 'DELETE' })
+    .then(response => response.text())
+    .then(data => { document.getElementById('result').textContent = data; })
+    .catch(err => { document.getElementById('result').textContent = 'Error: ' + err; });
+});
+
+document.getElementById('clearBtn').addEventListener('click', function() {
+    document.getElementById('result').textContent = '';
+});
+</script>
+
+</body>
+</html>
