@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/24 20:41:35 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/02/23 17:33:14 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/02/23 18:17:05 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,6 +23,18 @@ std::string getFirstLine(const std::string &s)
     return line;
 }
 
+bool isText(const std::string line)
+{
+    std::string key = "Content-Type:";
+    size_t pos = line.find(key);
+    if (pos == std::string::npos)
+        return false;
+    pos += key.size();
+    while (pos < line.size() && line[pos] == ' ')
+        pos++;
+    return line.compare(pos, 5, "text/") == 0;
+}
+
 bool Client::saveUploadedFileBinary(const std::string &uploadFolder)
 {
     std::ifstream in(request.gettmpFileName(), std::ios::binary);
@@ -32,6 +44,7 @@ bool Client::saveUploadedFileBinary(const std::string &uploadFolder)
     std::string line;
     std::string filename;
     std::string headers;
+    bool typeText = false;
 
     // Read headers (ASCII) line by line
     while (std::getline(in, line))
@@ -51,6 +64,10 @@ bool Client::saveUploadedFileBinary(const std::string &uploadFolder)
             if (fnEnd != std::string::npos)
                 filename = line.substr(fnPos, fnEnd - fnPos);
         }
+        else if (!typeText && isText(line))
+        {
+            typeText = true;
+        }
     }
     line.clear();
     headers = getFirstLine(headers);
@@ -66,29 +83,38 @@ bool Client::saveUploadedFileBinary(const std::string &uploadFolder)
 
     // Write remaining content (binary-safe)
     char buffer[8192];
-    std::string carry;
-
-    while (in.read(buffer, sizeof(buffer)) || in.gcount() > 0)
+    if (!typeText)
     {
-        size_t n = in.gcount();
-        std::string data = carry + std::string(buffer, n);
+        while (in.read(buffer, sizeof(buffer)) || in.gcount() > 0)
+            out.write(buffer, in.gcount());
+    }
+    else
+    {
+        std::string carry = "";
 
-        // search for stop string
-        size_t pos = data.find(headers);
-        if (pos != std::string::npos)
+        while (in.read(buffer, sizeof(buffer)) || in.gcount() > 0)
         {
-            out.write(data.data(), pos); // write only before headers
-            break; // stop reading further
+            size_t n = in.gcount();
+            std::string data = carry + std::string(buffer, n);
+
+            // search for stop string
+            size_t pos = data.find(headers);
+            if (pos != std::string::npos)
+            {
+                out.write(data.data(), pos); // write only before headers
+                break;                       // stop reading further
+            }
+
+            // no match -> write whole data
+            std::cout << "+++++ " << sizeof(buffer) << " +++++ " << in.gcount() << " +++++ " << data.size() << " \n";
+            out.write(buffer, in.gcount());
+
+            // keep tail for next chunk (for partial match)
+            if (data.size() >= headers.size())
+                carry = data.substr(data.size() - headers.size());
+            else
+                carry = data;
         }
-
-        // no match -> write whole data
-        out.write(data.data(), data.size());
-
-        // keep tail for next chunk (for partial match)
-        if (data.size() >= headers.size())
-            carry = data.substr(data.size() - headers.size());
-        else
-            carry = data;
     }
 
     out.close();
