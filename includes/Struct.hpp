@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/02/04 23:10:27 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/02/23 14:37:36 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/02/23 15:16:52 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,13 +24,13 @@ struct Redirect
     int code; // e.g. 301, 302
 };
 
-struct SessionData
-{
-    int visitCount;
-    time_t lastAccess;
+// struct SessionData
+// {
+//     int visitCount;
+//     time_t lastAccess;
 
-    SessionData() : visitCount(0), lastAccess(std::time(NULL)) {}
-};
+//     SessionData() : visitCount(0), lastAccess(std::time(NULL)) {}
+// };
 
 struct ServerConfig
 {
@@ -48,7 +48,7 @@ struct ServerConfig
     std::string php_upload_max_filesize = "20M";
     std::string php_post_max_size = "20M";
     std::string php_memory_limit = "128M";
-    std::map<std::string, SessionData> sessions;
+    // std::map<std::string, SessionData> sessions;
 };
 
 #endif

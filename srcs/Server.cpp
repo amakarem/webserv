@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/09 18:32:26 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/02/23 14:46:09 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/02/23 15:17:30 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -504,7 +504,7 @@ void Server::run()
                     continue;
                 }
             }
-            cleanupSessions(listenFdConfig[fd]);
+            // cleanupSessions(listenFdConfig[fd]);
         }
     }
     std::cout << "\nShutdown: Starting\n";
@@ -678,19 +678,18 @@ void Server::disconnectClient(Client *c)
 }
 
 
-void Server::cleanupSessions(ServerConfig &config)
-{
-    time_t now = std::time(NULL);
-
-    for (std::map<std::string, SessionData>::iterator it = config.sessions.begin();
-         it != config.sessions.end(); )
-    {
-        if (now - it->second.lastAccess > 600) // 600 seconds = 10 min
-            config.sessions.erase(it++);
-        else
-            ++it;
-    }
-}
+// void Server::cleanupSessions(ServerConfig &config)
+// {
+//     time_t now = std::time(NULL);
+//     for (std::map<std::string, SessionData>::iterator it = config.sessions.begin();
+//          it != config.sessions.end(); )
+//     {
+//         if (now - it->second.lastAccess > 600) // 600 seconds = 10 min
+//             config.sessions.erase(it++);
+//         else
+//             ++it;
+//     }
+// }
 
 const char *Server::openFileError::what() const throw()
 {

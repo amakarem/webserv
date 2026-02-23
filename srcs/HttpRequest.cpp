@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/24 20:40:32 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/02/23 14:53:56 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/02/23 15:09:45 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -122,8 +122,8 @@ bool HttpRequest::append(const char *data, size_t len)
                 keepAlive = true;
             if (line.compare(0, 7, "Cookie:") == 0)
             {
-                std::string cookieHeader = cleanString(line.substr(7));
-                parseCookies(cookieHeader);
+                rawCookieHeader = cleanString(line.substr(7));
+                parseCookies(rawCookieHeader);
             }
         }
         // HTTP/1.1 default keep-alive
