@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>404 | Not Found</title>
+
+<style>
+body {
+    margin: 0;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Courier New", monospace;
+    background: radial-gradient(circle at top, #07140b 0%, #050a06 55%, #020503 100%);
+    color: #bbf7d0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+/* scanlines */
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background: repeating-linear-gradient(
+        to bottom,
+        rgba(255,255,255,0.03),
+        rgba(255,255,255,0.03) 1px,
+        transparent 3px,
+        transparent 6px
+    );
+    opacity: 0.25;
+}
+
+.container {
+    width: 650px;
+    background: rgba(7, 20, 11, 0.85);
+    border: 1px solid rgba(34,197,94,0.25);
+    border-radius: 14px;
+    padding: 40px;
+    box-shadow: 0 0 0 2px rgba(34,197,94,0.1), 0 30px 90px rgba(0,0,0,0.9);
+    text-align: left;
+}
+
+h1 {
+    margin: 0 0 20px 0;
+    font-size: 22px;
+    color: #22c55e;
+}
+
+.error-code {
+    font-size: 64px;
+    font-weight: bold;
+    color: #22c55e;
+    margin-bottom: 20px;
+    text-shadow: 0 0 20px rgba(34,197,94,0.6);
+}
+
+.message {
+    margin-bottom: 25px;
+    line-height: 1.5;
+}
+
+a {
+    text-decoration: none;
+    color: #86efac;
+    font-weight: bold;
+    transition: 0.2s;
+}
+
+a::before {
+    content: "$ ";
+    color: #22c55e;
+}
+
+a:hover {
+    color: #ffffff;
+    text-shadow: 0 0 12px rgba(34,197,94,0.7);
+    transform: translateX(2px);
+}
+
+.footer {
+    margin-top: 25px;
+    padding-top: 15px;
+    border-top: 1px dashed rgba(34,197,94,0.3);
+    font-size: 12px;
+    opacity: 0.6;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>[webserv@42]$ request_resource</h1>
+
+    <div class="error-code">404</div>
+
+    <div class="message">
+        ERROR: RESOURCE_NOT_FOUND<br>
+        The requested endpoint does not exist on this server.<br>
+        Status: <span style="color:#22c55e;">FAIL</span>
+    </div>
+
+    <a href="/">cd /</a>
+
+    <div class="footer">
+        42 Webserv • Terminal Mode • error_handler active
+    </div>
+
+</div>
+
+</body>
+</html>

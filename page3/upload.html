@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Upload Test | Webserv</title>
+
+<style>
+body {
+    margin: 0;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Courier New", monospace;
+    background: radial-gradient(circle at top, #07140b 0%, #050a06 55%, #020503 100%);
+    color: #bbf7d0;
+}
+
+/* scanlines */
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background: repeating-linear-gradient(
+        to bottom,
+        rgba(255,255,255,0.03),
+        rgba(255,255,255,0.03) 1px,
+        transparent 3px,
+        transparent 6px
+    );
+    opacity: 0.25;
+}
+
+.container {
+    max-width: 900px;
+    margin: 70px auto;
+    padding: 40px;
+    background: rgba(7, 20, 11, 0.85);
+    border: 1px solid rgba(34,197,94,0.25);
+    border-radius: 14px;
+    box-shadow: 0 0 0 2px rgba(34,197,94,0.1), 0 30px 90px rgba(0,0,0,0.8);
+}
+
+.header h1 {
+    margin: 0;
+    font-size: 22px;
+    color: #22c55e;
+}
+
+.header p {
+    margin: 8px 0 25px 0;
+    opacity: 0.75;
+}
+
+.grid {
+    display: grid;
+    gap: 20px;
+}
+
+.card {
+    background: rgba(2,5,3,0.65);
+    border: 1px solid rgba(34,197,94,0.2);
+    border-radius: 10px;
+    padding: 18px;
+}
+
+.card h2 {
+    margin-top: 0;
+    color: #86efac;
+    font-size: 16px;
+}
+
+label {
+    display: block;
+    margin: 10px 0 6px 0;
+    font-size: 13px;
+    opacity: 0.8;
+}
+
+input[type="text"],
+input[type="file"] {
+    width: 100%;
+    padding: 8px 10px;
+    background: #020503;
+    border: 1px solid rgba(34,197,94,0.3);
+    border-radius: 6px;
+    color: #bbf7d0;
+    font-family: inherit;
+}
+
+input[type="text"]:focus,
+input[type="file"]:focus {
+    outline: none;
+    border-color: #22c55e;
+    box-shadow: 0 0 10px rgba(34,197,94,0.4);
+}
+
+.row {
+    margin-top: 12px;
+}
+
+.btn {
+    background: rgba(34,197,94,0.15);
+    border: 1px solid rgba(34,197,94,0.35);
+    padding: 8px 14px;
+    border-radius: 6px;
+    color: #86efac;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.btn:hover {
+    background: rgba(34,197,94,0.35);
+    color: #ffffff;
+    box-shadow: 0 0 12px rgba(34,197,94,0.6);
+}
+
+.btn-secondary {
+    background: transparent;
+    border: 1px dashed rgba(34,197,94,0.4);
+}
+
+hr {
+    border: none;
+    height: 1px;
+    background: rgba(34,197,94,0.2);
+    margin: 18px 0;
+}
+
+pre {
+    margin-top: 10px;
+    padding: 12px;
+    background: #020503;
+    border-radius: 6px;
+    border: 1px solid rgba(34,197,94,0.25);
+    min-height: 50px;
+}
+
+.bottom-nav {
+    margin-top: 25px;
+    padding-top: 15px;
+    border-top: 1px dashed rgba(34,197,94,0.3);
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.bottom-nav a {
+    text-decoration: none;
+    color: #86efac;
+    font-weight: bold;
+}
+
+.bottom-nav a::before {
+    content: "$ ";
+    color: #22c55e;
+}
+
+.bottom-nav a:hover {
+    color: #ffffff;
+    text-shadow: 0 0 10px rgba(34,197,94,0.6);
+}
+
+.footer {
+    margin-top: 20px;
+    font-size: 12px;
+    opacity: 0.6;
+}
+</style>
+</head>
+
+<body>
+<div class="container">
+
+    <div class="header">
+        <h1>[webserv@42]$ upload_console</h1>
+        <p>Available commands: POST | MULTIPART | PHP | DELETE</p>
+    </div>
+
+    <div class="grid">
+
+        <div class="card">
+            <h2>$ post_request</h2>
+            <form action="/info.php?test=true" method="POST">
+                <label>username</label>
+                <input type="text" name="username" id="username" placeholder="x10">
+                <div class="row">
+                    <input class="btn" type="submit" value="execute">
+                </div>
+            </form>
+        </div>
+
+        <div class="card">
+            <h2>$ direct_upload</h2>
+            <form action="/upload_request" method="POST" enctype="multipart/form-data">
+                <label>select_file</label>
+                <input type="file" name="file" id="file_direct">
+                <div class="row">
+                    <input class="btn" type="submit" name="submit" value="run_upload">
+                </div>
+            </form>
+        </div>
+
+        <div class="card">
+            <h2>$ php_upload</h2>
+            <form action="/upload.php" method="POST" enctype="multipart/form-data">
+                <label>select_file</label>
+                <input type="file" name="file" id="file_php">
+                <div class="row">
+                    <input class="btn" type="submit" name="submit" value="run_upload">
+                </div>
+            </form>
+
+            <hr>
+
+            <form action="/upload.php?debug=true" method="POST" enctype="multipart/form-data">
+                <label>debug_mode</label>
+                <input type="file" name="file" id="file_php_dbg">
+                <div class="row">
+                    <input class="btn btn-secondary" type="submit" name="submit" value="run_debug_upload">
+                </div>
+            </form>
+        </div>
+
+        <div class="card">
+            <h2>$ delete_request</h2>
+
+            <label>target_file</label>
+            <input type="text" id="filePath" value="test.txt">
+
+            <div class="row">
+                <button class="btn" id="deleteBtn" type="button">execute_delete</button>
+                <button class="btn btn-secondary" id="clearBtn" type="button">clear_output</button>
+            </div>
+
+            <pre id="result"></pre>
+        </div>
+
+    </div>
+
+    <div class="bottom-nav">
+        <a href="upload.php">list_uploads</a>
+        <a href="/">cd ..</a>
+    </div>
+
+    <div class="footer">
+        42 Webserv • Terminal Mode • status: ONLINE
+    </div>
+
+</div>
+
+<script>
+document.getElementById('deleteBtn').addEventListener('click', function() {
+    const path = document.getElementById('filePath').value;
+
+    fetch('/' + path, { method: 'DELETE' })
+    .then(response => response.text())
+    .then(data => { document.getElementById('result').textContent = data; })
+    .catch(err => { document.getElementById('result').textContent = 'Error: ' + err; });
+});
+
+document.getElementById('clearBtn').addEventListener('click', function() {
+    document.getElementById('result').textContent = '';
+});
+</script>
+
+</body>
+</html>

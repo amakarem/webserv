@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Page A</title>
+
+<style>
+body {
+    margin: 0;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Courier New", monospace;
+    background: radial-gradient(circle at top, #07140b 0%, #050a06 55%, #020503 100%);
+    color: #bbf7d0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+/* scanline effect */
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background: repeating-linear-gradient(
+        to bottom,
+        rgba(255,255,255,0.03),
+        rgba(255,255,255,0.03) 1px,
+        transparent 3px,
+        transparent 6px
+    );
+    opacity: 0.25;
+}
+
+.container {
+    background: rgba(7, 20, 11, 0.8);
+    border: 1px solid rgba(34,197,94,0.25);
+    border-radius: 14px;
+    padding: 45px;
+    width: 460px;
+    box-shadow: 0 0 0 2px rgba(34,197,94,0.1), 0 25px 80px rgba(0,0,0,0.8);
+    text-align: left;
+}
+
+h1 {
+    margin: 0 0 25px 0;
+    font-size: 20px;
+    color: #22c55e;
+}
+
+.output {
+    margin-bottom: 20px;
+    padding: 15px;
+    background: rgba(2,5,3,0.6);
+    border-radius: 10px;
+    border: 1px solid rgba(34,197,94,0.15);
+}
+
+.prompt {
+    margin-top: 20px;
+}
+
+a {
+    text-decoration: none;
+    color: #86efac;
+    font-weight: bold;
+    transition: 0.2s;
+}
+
+a::before {
+    content: "$ ";
+    color: #22c55e;
+}
+
+a:hover {
+    color: #ffffff;
+    text-shadow: 0 0 10px rgba(34,197,94,0.6);
+    transform: translateX(2px);
+}
+</style>
+</head>
+
+<body>
+<div class="container">
+
+    <h1>[webserv@42]$ cat page_a.txt</h1>
+
+    <div class="output">
+        📄 Page A successfully loaded.<br>
+        Status: <span style="color:#22c55e;">OK</span>
+    </div>
+
+    <div class="prompt">
+        <a href="/">cd ..</a>
+    </div>
+
+</div>
+</body>
+</html>
