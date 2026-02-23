@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/09 18:32:26 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/02/23 15:17:30 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/02/23 19:23:46 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -508,9 +508,8 @@ void Server::run()
         }
     }
     std::cout << "\nShutdown: Starting\n";
-    for (auto cl : clients)
-        disconnectClient(cl);
-    clients.clear();
+    while (!clients.empty())
+        disconnectClient(clients.back());
     close(epollFd);
     close(listenFd);
     std::cout << "Shutdown: Finished\n";
