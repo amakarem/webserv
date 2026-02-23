@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/09 18:42:01 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/02/13 17:15:49 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/02/23 14:45:07 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -56,7 +56,7 @@ public:
     void run();
     std::string resolvePath(const std::string &path);
     void disconnectClient(Client *c);
-
+    void cleanupSessions(ServerConfig &config);
     class openFileError : public std::exception
     {
     public:

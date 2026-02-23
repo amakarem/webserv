@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/24 20:40:32 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/02/13 18:00:35 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/02/23 14:30:14 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -59,6 +59,36 @@ void HttpRequest::decodePath()
     this->path = output;
 }
 
+void HttpRequest::parseCookies(const std::string& header)
+{
+    std::stringstream ss(header);
+    std::string pair;
+
+    while (std::getline(ss, pair, ';'))
+    {
+        size_t pos = pair.find('=');
+        if (pos == std::string::npos)
+            continue;
+
+        std::string key = pair.substr(0, pos);
+        std::string value = pair.substr(pos + 1);
+
+        // trim spaces
+        key.erase(0, key.find_first_not_of(" "));
+        value.erase(0, value.find_first_not_of(" "));
+
+        cookies[key] = value;
+    }
+}
+
+std::string HttpRequest::getCookie(const std::string& key) const
+{
+    std::map<std::string, std::string>::const_iterator it = cookies.find(key);
+    if (it != cookies.end())
+        return it->second;
+    return "";
+}
+
 bool HttpRequest::append(const char *data, size_t len)
 {
     raw.append(data, len);
@@ -78,13 +108,18 @@ bool HttpRequest::append(const char *data, size_t len)
         std::string line;
         while (std::getline(iss, line))
         {
-            if (line.find("Content-Type:") != std::string::npos)
+            if (line.compare(0, 13, "Content-Type:") == 0)
                 contentType = cleanString(line.substr(14));
-            if (line.find("Content-Length:") != std::string::npos)
+            if (line.compare(0, 15, "Content-Length:") == 0)
                 contentLength = std::atoi(line.c_str() + 15);
-            if (line.find("Connection:") != std::string::npos &&
+            if (line.compare(0, 11, "Connection:") == 0 &&
                 line.find("keep-alive") != std::string::npos)
                 keepAlive = true;
+            if (line.compare(0, 7, "Cookie:") == 0)
+            {
+                std::string cookieHeader = cleanString(line.substr(7));
+                parseCookies(cookieHeader);
+            }
         }
         // HTTP/1.1 default keep-alive
         if (version == "HTTP/1.1" && !keepAlive)

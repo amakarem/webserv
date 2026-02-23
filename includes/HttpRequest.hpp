@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/24 19:05:01 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/02/13 17:32:22 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/02/23 14:30:10 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,6 +19,7 @@
 #include <fstream>
 #include <filesystem>
 #include <unistd.h>
+#include <map>
 
 class HttpRequest
 {
@@ -38,6 +39,7 @@ private:
     std::ofstream tmpFile;
     size_t bodyReceived;
     std::string cgiHeaders;
+    std::map<std::string, std::string> cookies;
 
 public:
     HttpRequest();
@@ -64,6 +66,8 @@ public:
     void reset();
     std::string gettmpFileName();
     std::string getBody();
+    void parseCookies(const std::string& header);
+    std::string getCookie(const std::string& key) const;
 };
 
 #endif
