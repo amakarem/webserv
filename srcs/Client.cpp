@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/24 20:41:35 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/02/13 17:49:20 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/02/23 14:56:53 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -466,6 +466,8 @@ std::string Client::executePHP(const std::string &scriptPath)
         envVec.push_back("SERVER_PROTOCOL=HTTP/1.1");
         envVec.push_back("REQUEST_METHOD=" + request.getMethod());
         envVec.push_back("REDIRECT_STATUS=200");
+        if (!request.getrawCookieHeader().empty())
+            envVec.push_back("HTTP_COOKIE=" + request.getrawCookieHeader());
 
         if (!tmpFileName.empty() && (request.getMethod() == "POST" || request.getMethod() == "PUT"))
         {

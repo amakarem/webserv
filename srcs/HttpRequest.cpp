@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/24 20:40:32 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/02/23 14:30:14 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/02/23 14:53:56 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -79,6 +79,11 @@ void HttpRequest::parseCookies(const std::string& header)
 
         cookies[key] = value;
     }
+}
+
+std::string HttpRequest::getrawCookieHeader() const
+{
+    return rawCookieHeader;
 }
 
 std::string HttpRequest::getCookie(const std::string& key) const
