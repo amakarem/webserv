@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/24 20:41:35 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/02/23 18:17:05 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/02/23 18:18:17 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -91,24 +91,17 @@ bool Client::saveUploadedFileBinary(const std::string &uploadFolder)
     else
     {
         std::string carry = "";
-
         while (in.read(buffer, sizeof(buffer)) || in.gcount() > 0)
         {
             size_t n = in.gcount();
             std::string data = carry + std::string(buffer, n);
-
-            // search for stop string
             size_t pos = data.find(headers);
             if (pos != std::string::npos)
             {
                 out.write(data.data(), pos); // write only before headers
                 break;                       // stop reading further
             }
-
-            // no match -> write whole data
-            std::cout << "+++++ " << sizeof(buffer) << " +++++ " << in.gcount() << " +++++ " << data.size() << " \n";
-            out.write(buffer, in.gcount());
-
+            out.write(data.data(), data.size());
             // keep tail for next chunk (for partial match)
             if (data.size() >= headers.size())
                 carry = data.substr(data.size() - headers.size());

@@ -6,7 +6,7 @@
 /*   By: aelaaser <aelaaser@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/24 20:40:32 by aelaaser          #+#    #+#             */
-/*   Updated: 2026/02/23 17:56:09 by aelaaser         ###   ########.fr       */
+/*   Updated: 2026/02/23 18:19:25 by aelaaser         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -140,7 +140,7 @@ bool HttpRequest::append(const char *data, size_t len)
                 std::cout << "ERROR:Cannot create temporary file for HTTP body\n";
                 return (false);
             }
-            std::cout << tmpName << " as tmp file\n";
+            // std::cout << tmpName << " as tmp file\n";
             tmpFileName = tmpName; // store the filename for later use
             tmpFile.open(tmpFileName, std::ios::out | std::ios::binary);
             if (!tmpFile.is_open())
