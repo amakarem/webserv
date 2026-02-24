@@ -54,7 +54,7 @@ public:
     void validateConfig();
     void startListening();
     void run();
-    std::string resolvePath(const std::string &path);
+    // std::string resolvePath(const std::string &path);
     void disconnectClient(Client *c);
 
     class openFileError : public std::exception
