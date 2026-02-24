@@ -32,7 +32,7 @@ private:
     int fd;                   // client socket
     std::ifstream *file;      // pointer to open file
     std::string headerBuffer; // HTTP headers to send
-    bool headersSent;         // headers already sent
+    // bool headersSent;         // headers already sent
     bool finished;            // done sending everything
     long lastActivity;
     const ServerConfig &config;
@@ -70,8 +70,8 @@ public:
     bool isPy() const;
     bool isCGI() const;
 
-    void setHeadersSent(bool val);
-    bool isHeadersSent() const;
+    // void setHeadersSent(bool val);
+    // bool isHeadersSent() const;
 
     void setFinished(bool val);
     bool isFinished() const;
@@ -86,5 +86,6 @@ public:
     bool saveUploadedFileBinary(const std::string &uploadFolder);
     std::string executeCGI(const std::string &scriptPath);
     void resetRequest();
+    void clearCGI();
 };
 #endif

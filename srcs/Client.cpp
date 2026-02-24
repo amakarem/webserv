@@ -117,7 +117,6 @@ bool Client::saveUploadedFileBinary(const std::string &uploadFolder)
 Client::Client(int fd, const ServerConfig &config) : fd(fd), config(config)
 {
     this->file = NULL;
-    this->headersSent = false;
     this->finished = false;
     this->setlastActivity();
     this->headersParsed = false;
@@ -153,14 +152,16 @@ std::ifstream *Client::getFile() const { return file; }
 void Client::setHeaderBuffer(const std::string &buf) { headerBuffer = buf; }
 std::string &Client::getHeaderBuffer() { return headerBuffer; }
 
-void Client::setHeadersSent(bool val) { headersSent = val; }
-bool Client::isHeadersSent() const { return headersSent; }
-
 void Client::setFinished(bool val) { finished = val; }
 bool Client::isFinished() const { return finished; }
 bool Client::isPHP() const { return PHP; }
 bool Client::isPy() const { return Py; }
 bool Client::isCGI() const { return isPHP() || isPy(); }
+void Client::clearCGI()
+{
+    this->PHP = false;
+    this->Py = false;
+}
 
 void Client::resetRequest() { return request.reset(); }
 
@@ -179,7 +180,6 @@ bool Client::isTimeout() const
 
 bool Client::stopHere()
 {
-    this->setHeadersSent(true);
     request.setRequestComplete();
     return (false);
 }
@@ -276,14 +276,11 @@ int Client::readRequest()
     if (this->fullPath.empty())
         this->fullPath = resolvePath(request.getPath());
 
-    if (!request.isRequestComplete())
-        return (0);
     if (request.getMethod() == "POST" && config.allowupload.find(this->script_name) != config.allowupload.end())
     {
         std::string folder = config.allowupload.at(this->script_name);
         if (!saveUploadedFileBinary(folder))
             this->generateErrorPage(500);
-        this->setHeadersSent(true);
         return (0);
     }
     struct stat st;
@@ -336,7 +333,6 @@ int Client::readRequest()
     }
     else
         this->generateErrorPage(404);
-    this->setHeadersSent(true);
     return (0);
 }
 
@@ -364,7 +360,7 @@ int Client::sendResponse()
 
     if (this->isCGI() && this->sendBuffer.empty())
     {
-        // error running PHP
+        // error running CGI
         this->generateErrorPage(500);
         return 1;
     }
@@ -479,6 +475,7 @@ void Client::generateErrorPage(int errorCode)
 {
     auto it = config.error_pages.find(errorCode);
     request.setRequestError(errorCode);
+    this->clearCGI();
     if (it != config.error_pages.end())
     {
         struct stat st;
