@@ -38,6 +38,7 @@ private:
     std::ofstream tmpFile;
     size_t bodyReceived;
     std::string cgiHeaders;
+    std::string rawCookieHeader;
 
 public:
     HttpRequest();
@@ -64,6 +65,7 @@ public:
     void reset();
     std::string gettmpFileName();
     std::string getBody();
+    std::string getrawCookieHeader() const;
 };
 
 #endif

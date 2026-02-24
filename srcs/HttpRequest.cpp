@@ -59,6 +59,11 @@ void HttpRequest::decodePath()
     this->path = output;
 }
 
+std::string HttpRequest::getrawCookieHeader() const
+{
+    return rawCookieHeader;
+}
+
 bool HttpRequest::append(const char *data, size_t len)
 {
     raw.append(data, len);
@@ -78,21 +83,21 @@ bool HttpRequest::append(const char *data, size_t len)
         std::string line;
         while (std::getline(iss, line))
         {
-            if (line.find("Content-Type:") != std::string::npos)
+            if (line.compare(0, 13, "Content-Type:") == 0)
                 contentType = cleanString(line.substr(14));
-            if (line.find("Content-Length:") != std::string::npos)
+            if (line.compare(0, 15, "Content-Length:") == 0)
                 contentLength = std::atoi(line.c_str() + 15);
-            if (line.find("Connection:") != std::string::npos &&
+            if (line.compare(0, 11, "Connection:") == 0 &&
                 line.find("keep-alive") != std::string::npos)
                 keepAlive = true;
+            if (line.compare(0, 7, "Cookie:") == 0)
+                rawCookieHeader = cleanString(line.substr(7));
         }
         // HTTP/1.1 default keep-alive
         if (version == "HTTP/1.1" && !keepAlive)
             keepAlive = true;
         if (contentLength > 0)
         {
-            // std::string tmp = tmpdir + "/httpbodyXXXXXX";
-            // char tmpName[] = tmp.c_str(); // XXXXXX will be replaced
             std::string tmpName = tmpdir + "/httpbodyXXXXXX"; // XXXXXX will be replaced
             int fd = mkstemp(tmpName.data());
             if (fd < 0)
@@ -100,7 +105,7 @@ bool HttpRequest::append(const char *data, size_t len)
                 std::cout << "ERROR:Cannot create temporary file for HTTP body\n";
                 return (false);
             }
-            std::cout << tmpName << " as tmp file\n";
+            // std::cout << tmpName << " as tmp file\n";
             tmpFileName = tmpName; // store the filename for later use
             tmpFile.open(tmpFileName, std::ios::out | std::ios::binary);
             if (!tmpFile.is_open())
@@ -252,7 +257,7 @@ std::string HttpRequest::getMimeType()
     if (dot == std::string::npos)
         return "text/html"; // default
     std::string ext = this->path.substr(dot + 1);
-    if (ext == "html" || ext == "htm" || ext == "php")
+    if (ext == "html" || ext == "htm" || ext == "php" || ext == "py")
         return "text/html";
     if (ext == "css")
         return "text/css";
@@ -348,8 +353,6 @@ std::string HttpRequest::buildHttpResponse(const std::string &body, int httpCode
         connectionHeader = "Keep-Alive: timeout=5";
     if (httpCode != 200 && fileSize == 0)
         newbody = "<h1>" + getHttpCodeMsg(httpCode) + "</h1>";
-    // if (httpCode == 200)
-    // {
     std::string mime = (this->path.empty() ? "text/html" : getMimeType());
     oss << "HTTP/1.1 " << httpCode << " " << getHttpCodeMsg(httpCode) << "\r\n";
     if (fileSize > 0)
@@ -368,33 +371,16 @@ std::string HttpRequest::buildHttpResponse(const std::string &body, int httpCode
         }
     }
     else
+    {
+        if (!getrawCookieHeader().empty())
+            oss << "Set-Cookie: " << getrawCookieHeader() << "\r\n";
         oss << "Content-Type: " << mime << "\r\n";
+    }
     oss << "Connection: " << connectionHeader << "\r\n";
     oss << "\r\n";
 
     if (newbody.length() > 0)
         oss << newbody; // append body only if small message
-    // }
-    // else if (httpCode == 403)
-    // {
-    //     std::string msg = "<h1>403 Forbidden</h1>";
-    //     oss << "HTTP/1.1 403 Forbidden\r\n";
-    //     oss << "Content-Length: " << msg.length() << "\r\n";
-    //     oss << "Content-Type: text/html\r\n";
-    //     oss << "Connection: " << connectionHeader << "\r\n";
-    //     oss << "\r\n";
-    //     oss << msg;
-    // }
-    // else
-    // {
-    //     std::string msg = "<h1>404 Not Found</h1>";
-    //     oss << "HTTP/1.1 404 Not Found\r\n";
-    //     oss << "Content-Length: " << msg.length() << "\r\n";
-    //     oss << "Content-Type: text/html\r\n";
-    //     oss << "Connection: " << connectionHeader << "\r\n";
-    //     oss << "\r\n";
-    //     oss << msg;
-    // }
 
     return oss.str();
 }
