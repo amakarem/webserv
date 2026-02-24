@@ -2,6 +2,10 @@
 echo "hello world";
 echo "<hr><h1>GET</h1>";
 print_r($_GET);
+if (isset($_GET["error"]))
+{
+    throw new Exception("Intentional 500 error");
+}
 echo "<hr><h1>POST</h1>";
 echo "<pre>";
 var_dump($_POST);

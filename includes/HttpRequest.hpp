@@ -31,12 +31,13 @@ private:
     std::string raw;
     bool headersComplete;
     bool requestComplete;
-    size_t contentLength;
+    int HttpStatusCode;
+    uint64_t contentLength;
     std::string contentType;
     std::string tmpFileName;
     std::string tmpdir;
     std::ofstream tmpFile;
-    size_t bodyReceived;
+    uint64_t bodyReceived;
     std::string cgiHeaders;
     std::string rawCookieHeader;
 
@@ -55,16 +56,19 @@ public:
     bool isRequestComplete() const;
     void setRequestComplete();
     bool isPost() const;
+    bool isInvalidRequest() const;
     size_t getContentLength() const;
     size_t getBodyReceived() const;
     std::string getContentType() const;
     std::string getHttpCodeMsg(int httpCode);
-    std::string buildHttpResponse(const std::string &body, int httpCode, size_t fileSize = 0);
+    std::string buildHttpResponse(const std::string &body, size_t fileSize = 0);
     void setcgiHeaders(std::string _cgiHeaders);
     std::string getcgiHeaders();
     void reset();
     std::string gettmpFileName();
-    std::string getBody();
+    int getHttpStatusCode() const;
+    uint64_t parsecontentLength(const std::string &line);
+    void setRequestError(int err);
     std::string getrawCookieHeader() const;
 };
 

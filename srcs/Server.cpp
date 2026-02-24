@@ -221,6 +221,8 @@ void Server::setConfig(const char *filename)
             if (value == "on" || value == "1")
                 current.autoindex = true;
         }
+        else if (key == "upload_max_filesize")
+            current.upload_max_filesize = value;
         else if (key == "php_upload_max_filesize")
             current.php_upload_max_filesize = value;
         else if (key == "php_post_max_size")

@@ -17,7 +17,48 @@ HttpRequest::HttpRequest()
     this->headersComplete = false;
     this->requestComplete = false;
     this->keepAlive = false;
-    this->contentLength = false;
+    this->HttpStatusCode = 200;
+    this->contentLength = 0;
+}
+
+static std::string trim(const std::string &s)
+{
+    size_t start = s.find_first_not_of(" \t");
+    if (start == std::string::npos)
+        return "";
+    size_t end = s.find_last_not_of(" \t\r");
+    return s.substr(start, end - start + 1);
+}
+
+void HttpRequest::setRequestError(int err)
+{
+    this->HttpStatusCode = err;
+    this->requestComplete = true;
+}
+
+uint64_t HttpRequest::parsecontentLength(const std::string &line)
+{
+    auto pos = line.find(':');
+    if (pos == std::string::npos)
+    {
+        this->HttpStatusCode = 411;
+        return 0;
+    }
+    std::string value = trim(line.substr(pos + 1));
+    size_t idx = 0;
+    uint64_t contentLength = 0;
+    try {
+        contentLength = std::stoull(value, &idx);
+    } catch (std::exception &e) {
+        this->HttpStatusCode = 411;
+        return 0;
+    }
+    if (idx != value.size())
+    {
+        this->HttpStatusCode = 411;
+        return 0;
+    }
+    return contentLength;
 }
 
 std::string cleanString(const std::string &input)
@@ -86,22 +127,30 @@ bool HttpRequest::append(const char *data, size_t len)
             if (line.compare(0, 13, "Content-Type:") == 0)
                 contentType = cleanString(line.substr(14));
             if (line.compare(0, 15, "Content-Length:") == 0)
-                contentLength = std::atoi(line.c_str() + 15);
+                contentLength = parsecontentLength(line);
             if (line.compare(0, 11, "Connection:") == 0 &&
                 line.find("keep-alive") != std::string::npos)
                 keepAlive = true;
             if (line.compare(0, 7, "Cookie:") == 0)
                 rawCookieHeader = cleanString(line.substr(7));
         }
+        if (isInvalidRequest())
+            return false;
         // HTTP/1.1 default keep-alive
         if (version == "HTTP/1.1" && !keepAlive)
             keepAlive = true;
         if (contentLength > 0)
         {
+            if (contentLength > 0)
+            {
+                setRequestError(413);
+                return (false);
+            }
             std::string tmpName = tmpdir + "/httpbodyXXXXXX"; // XXXXXX will be replaced
             int fd = mkstemp(tmpName.data());
             if (fd < 0)
             {
+                setRequestError(500);
                 std::cout << "ERROR:Cannot create temporary file for HTTP body\n";
                 return (false);
             }
@@ -111,6 +160,7 @@ bool HttpRequest::append(const char *data, size_t len)
             if (!tmpFile.is_open())
             {
                 close(fd);
+                setRequestError(500);
                 std::cout << "ERROR:Cannot open temporary file stream\n";
                 return (false);
             }
@@ -120,7 +170,7 @@ bool HttpRequest::append(const char *data, size_t len)
             if (raw.size() > bodyStart)
             {
                 tmpFile.write(raw.data() + bodyStart, raw.size() - bodyStart);
-                bodyReceived = raw.size() - bodyStart;
+                bodyReceived = static_cast<uint64_t>(raw.size() - bodyStart);
             }
             else
                 bodyReceived = 0;
@@ -138,6 +188,7 @@ bool HttpRequest::append(const char *data, size_t len)
     {
         if (!tmpFile.is_open())
         {
+            setRequestError(500);
             std::cout << "ERROR:Tmp file not open for body\n";
             return (false);
         }
@@ -204,6 +255,11 @@ std::string HttpRequest::getVersion() const
     return this->version;
 }
 
+int HttpRequest::getHttpStatusCode() const
+{
+    return this->HttpStatusCode;
+}
+
 bool HttpRequest::isKeepAlive() const
 {
     return this->keepAlive;
@@ -222,6 +278,11 @@ bool HttpRequest::isRequestComplete() const
 void HttpRequest::setRequestComplete()
 {
     this->requestComplete = true;
+}
+
+bool HttpRequest::isInvalidRequest() const
+{
+    return (this->HttpStatusCode != 200);
 }
 
 bool HttpRequest::isPost() const
@@ -294,6 +355,7 @@ void HttpRequest::reset()
     requestComplete = false;
     keepAlive = false;
     contentLength = 0;
+    HttpStatusCode = 200;
     method.clear();
     path.clear();
     version.clear();
@@ -303,6 +365,13 @@ void HttpRequest::reset()
 
 void HttpRequest::setcgiHeaders(std::string _cgiHeaders)
 {
+    std::istringstream iss(_cgiHeaders);
+    std::string line;
+    while (std::getline(iss, line))
+    {
+        if (line.compare(0, 7, "Status:") == 0)
+            this->HttpStatusCode = std::atoi(line.c_str() + 7);
+    }
     this->cgiHeaders = _cgiHeaders;
 }
 std::string HttpRequest::getcgiHeaders() { return this->cgiHeaders; };
@@ -333,6 +402,8 @@ std::string HttpRequest::getHttpCodeMsg(int httpCode)
         return ("Method Not Allowed");
     case 409:
         return ("Conflict");
+    case 411:
+        return ("Length Required");
     case 413:
         return ("Content Too Large");
     case 414:
@@ -344,17 +415,17 @@ std::string HttpRequest::getHttpCodeMsg(int httpCode)
     }
 }
 
-std::string HttpRequest::buildHttpResponse(const std::string &body, int httpCode, size_t fileSize)
+std::string HttpRequest::buildHttpResponse(const std::string &body, size_t fileSize)
 {
     std::ostringstream oss;
     std::string connectionHeader = "close";
     std::string newbody = body;
-    if (this->keepAlive && httpCode == 200)
+    if (this->keepAlive && getHttpStatusCode() == 200)
         connectionHeader = "Keep-Alive: timeout=5";
-    if (httpCode != 200 && fileSize == 0)
-        newbody = "<h1>" + getHttpCodeMsg(httpCode) + "</h1>";
-    std::string mime = (this->path.empty() ? "text/html" : getMimeType());
-    oss << "HTTP/1.1 " << httpCode << " " << getHttpCodeMsg(httpCode) << "\r\n";
+    if (getHttpStatusCode() != 200 && fileSize == 0)
+        newbody = "<h1>" + getHttpCodeMsg(getHttpStatusCode()) + "</h1>";
+    std::string mime = (this->path.empty() || getHttpStatusCode() != 200 ? "text/html" : getMimeType());
+    oss << "HTTP/1.1 " << getHttpStatusCode() << " " << getHttpCodeMsg(getHttpStatusCode()) << "\r\n";
     if (fileSize > 0)
         oss << "Content-Length: " << fileSize << "\r\n"; // for large files
     else
@@ -385,19 +456,19 @@ std::string HttpRequest::buildHttpResponse(const std::string &body, int httpCode
     return oss.str();
 }
 
-std::string HttpRequest::getBody()
-{
-    if (method != "POST" && method != "PUT")
-        return "";
+// std::string HttpRequest::getBody()
+// {
+//     if (method != "POST" && method != "PUT")
+//         return "";
 
-    if (tmpFileName.empty())
-        return "";
+//     if (tmpFileName.empty())
+//         return "";
 
-    // Read body from disk (for PHP CGI)
-    std::ifstream f(tmpFileName, std::ios::binary);
-    if (!f.is_open())
-        return "";
+//     // Read body from disk (for PHP CGI)
+//     std::ifstream f(tmpFileName, std::ios::binary);
+//     if (!f.is_open())
+//         return "";
 
-    std::string body((std::istreambuf_iterator<char>(f)), std::istreambuf_iterator<char>());
-    return body;
-}
+//     std::string body((std::istreambuf_iterator<char>(f)), std::istreambuf_iterator<char>());
+//     return body;
+// }

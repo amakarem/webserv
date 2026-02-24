@@ -110,7 +110,7 @@ bool Client::saveUploadedFileBinary(const std::string &uploadFolder)
     }
 
     out.close();
-    setHeaderBuffer(request.buildHttpResponse("<h1>" + filename + " uploaded</h1>", 200, 0));
+    setHeaderBuffer(request.buildHttpResponse("<h1>" + filename + " uploaded</h1>", 0));
     return true;
 }
 
@@ -258,7 +258,16 @@ int Client::readRequest()
             // return (1); // real error → disconnect
         }
         if (!request.append(buffer, bytesRead))
+        {
+            if (request.isInvalidRequest())
+            {
+                std::cout << "ERROR isInvalidRequest: " << request.getHttpStatusCode() << "\n";
+                this->generateErrorPage(404);
+                // this->setHeadersSent(true);
+                return (0);
+            }
             return (1);
+        }
     }
     this->setlastActivity();
     if (!request.isHeadersComplete() || !continueAfterHeader())
@@ -296,7 +305,11 @@ int Client::readRequest()
                 request.setcgiHeaders(cgiOut.substr(0, pos));
                 this->sendBuffer = cgiOut.substr(pos + (cgiOut[pos] == '\r' ? 4 : 2));
             }
-            this->setHeaderBuffer(request.buildHttpResponse("", 200, this->sendBuffer.size()));
+            std::cout << request.getcgiHeaders() << "\n";
+            if (request.getHttpStatusCode() == 200)
+                this->setHeaderBuffer(request.buildHttpResponse("", this->sendBuffer.size()));
+            else
+                this->generateErrorPage(request.getHttpStatusCode());
         }
         else if (request.getMethod() == "DELETE")
         {
@@ -311,13 +324,13 @@ int Client::readRequest()
         else
         {
             this->setFile(new std::ifstream(fullPath.c_str(), std::ios::in | std::ios::binary));
-            this->setHeaderBuffer(request.buildHttpResponse("", 200, st.st_size));
+            this->setHeaderBuffer(request.buildHttpResponse("", st.st_size));
         }
     }
     else if (!fullPath.empty() && stat(fullPath.c_str(), &st) == 0 && S_ISDIR(st.st_mode))
     {
         if (config.autoindex)
-            this->setHeaderBuffer(request.buildHttpResponse(generateDirectoryListing(fullPath), 200));
+            this->setHeaderBuffer(request.buildHttpResponse(generateDirectoryListing(fullPath)));
         else
             this->generateErrorPage(403);
     }
@@ -465,18 +478,19 @@ std::string Client::resolvePath(const std::string &path)
 void Client::generateErrorPage(int errorCode)
 {
     auto it = config.error_pages.find(errorCode);
+    request.setRequestError(errorCode);
     if (it != config.error_pages.end())
     {
         struct stat st;
         if (!it->second.empty() && stat(it->second.c_str(), &st) == 0 && !S_ISDIR(st.st_mode))
         {
             this->setFile(new std::ifstream(it->second.c_str(), std::ios::in | std::ios::binary));
-            this->setHeaderBuffer(request.buildHttpResponse("", errorCode, st.st_size));
+            this->setHeaderBuffer(request.buildHttpResponse("", st.st_size));
             return;
         }
         std::cout << it->second << "\n";
     }
-    this->setHeaderBuffer(request.buildHttpResponse("", errorCode, 0));
+    this->setHeaderBuffer(request.buildHttpResponse("", 0));
     this->setFinished(true);
     return;
 }

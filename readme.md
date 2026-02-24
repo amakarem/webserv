@@ -55,6 +55,8 @@ WebServ configuration is done through a config file defining one or more servers
 
 - `allowupload` — configure upload paths, it's 2 parts the endpoint and the localfolder example (allowupload /upload_request /var/www/uploads;) any POST request to upload_request will save the file into /var/www/uploads
 
+- `upload_max_filesize` — maximum file upload size for direct upload defualt set to unlimited
+
 - `php_upload_max_filesize` — maximum file upload size for PHP defualt set to 20M
 
 - `php_post_max_size` — maximum POST request size for PHP defualt set to 20M
@@ -70,7 +72,7 @@ WebServ configuration is done through a config file defining one or more servers
 **Ensure all server blocks have the required parameters listen, root, and index. All other parameters are optional.**
 
 ## Supported CGI
-- `php-cgi`
+- `php-cgi`, `python3`
 
 ## Notes
 - The `www` folder contains sample test files you can use to quickly test the server.
