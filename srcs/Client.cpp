@@ -126,6 +126,7 @@ Client::Client(int fd, const ServerConfig &config) : fd(fd), config(config)
     this->Py = false;
     this->query_string = "";
     this->request.setTmpDir(config.tmpdir);
+    this->request.setMaxContentLength(config.upload_max_filesize);
 }
 
 Client::~Client()
@@ -262,8 +263,7 @@ int Client::readRequest()
             if (request.isInvalidRequest())
             {
                 std::cout << "ERROR isInvalidRequest: " << request.getHttpStatusCode() << "\n";
-                this->generateErrorPage(404);
-                // this->setHeadersSent(true);
+                this->generateErrorPage(request.getHttpStatusCode());
                 return (0);
             }
             return (1);

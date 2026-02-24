@@ -33,6 +33,7 @@ private:
     bool requestComplete;
     int HttpStatusCode;
     uint64_t contentLength;
+    uint64_t MaxContentLength;
     std::string contentType;
     std::string tmpFileName;
     std::string tmpdir;
@@ -69,6 +70,8 @@ public:
     int getHttpStatusCode() const;
     uint64_t parsecontentLength(const std::string &line);
     void setRequestError(int err);
+    void setMaxContentLength(uint64_t _MaxContentLength);
+    uint64_t getMaxContentLength();
     std::string getrawCookieHeader() const;
 };
 

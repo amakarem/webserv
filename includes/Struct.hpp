@@ -37,7 +37,7 @@ struct ServerConfig
     std::unordered_map<int, std::string> error_pages;
     std::unordered_map<std::string, Redirect> redirects;
     std::unordered_map<std::string, std::string> allowupload;
-    std::string upload_max_filesize = "0";
+    uint64_t upload_max_filesize = 0;
     std::string php_upload_max_filesize = "20M";
     std::string php_post_max_size = "20M";
     std::string php_memory_limit = "128M";

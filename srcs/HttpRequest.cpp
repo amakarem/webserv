@@ -46,9 +46,9 @@ uint64_t HttpRequest::parsecontentLength(const std::string &line)
     }
     std::string value = trim(line.substr(pos + 1));
     size_t idx = 0;
-    uint64_t contentLength = 0;
+    uint64_t cLength = 0;
     try {
-        contentLength = std::stoull(value, &idx);
+        cLength = std::stoull(value, &idx);
     } catch (std::exception &e) {
         this->HttpStatusCode = 411;
         return 0;
@@ -58,7 +58,7 @@ uint64_t HttpRequest::parsecontentLength(const std::string &line)
         this->HttpStatusCode = 411;
         return 0;
     }
-    return contentLength;
+    return cLength;
 }
 
 std::string cleanString(const std::string &input)
@@ -141,10 +141,10 @@ bool HttpRequest::append(const char *data, size_t len)
             keepAlive = true;
         if (contentLength > 0)
         {
-            if (contentLength > 0)
+            if (contentLength > getMaxContentLength() && getMaxContentLength() != 0)
             {
-                setRequestError(413);
-                return (false);
+                //this->HttpStatusCode = 413;
+                std::cout << "413 Content Too Large\n";
             }
             std::string tmpName = tmpdir + "/httpbodyXXXXXX"; // XXXXXX will be replaced
             int fd = mkstemp(tmpName.data());
@@ -169,7 +169,8 @@ bool HttpRequest::append(const char *data, size_t len)
             size_t bodyStart = headerEnd + 4;
             if (raw.size() > bodyStart)
             {
-                tmpFile.write(raw.data() + bodyStart, raw.size() - bodyStart);
+                if (!isInvalidRequest())
+                    tmpFile.write(raw.data() + bodyStart, raw.size() - bodyStart);
                 bodyReceived = static_cast<uint64_t>(raw.size() - bodyStart);
             }
             else
@@ -236,6 +237,15 @@ void HttpRequest::setTmpDir(std::string tmpdir)
 {
     this->tmpdir = tmpdir;
     std::filesystem::create_directories(tmpdir);
+}
+
+void HttpRequest::setMaxContentLength(uint64_t _MaxContentLength)
+{
+    this->MaxContentLength = _MaxContentLength;
+}
+uint64_t HttpRequest::getMaxContentLength()
+{
+    return this->MaxContentLength;
 }
 
 HttpRequest::~HttpRequest() {};
@@ -455,20 +465,3 @@ std::string HttpRequest::buildHttpResponse(const std::string &body, size_t fileS
 
     return oss.str();
 }
-
-// std::string HttpRequest::getBody()
-// {
-//     if (method != "POST" && method != "PUT")
-//         return "";
-
-//     if (tmpFileName.empty())
-//         return "";
-
-//     // Read body from disk (for PHP CGI)
-//     std::ifstream f(tmpFileName, std::ios::binary);
-//     if (!f.is_open())
-//         return "";
-
-//     std::string body((std::istreambuf_iterator<char>(f)), std::istreambuf_iterator<char>());
-//     return body;
-// }

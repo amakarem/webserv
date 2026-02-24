@@ -40,6 +40,56 @@ static std::string strtoupper(const std::string &s)
     return upperString;
 }
 
+static uint64_t parse_size(const std::string& input)
+{
+    std::string str = trim(input);
+    if (str.empty())
+        return 0;
+
+    size_t idx = 0;
+    uint64_t value = 0;
+
+    try {
+        value = std::stoull(str, &idx);
+    } catch (std::exception &e) {
+        std::cout << "WARNING: upload_max_filesize Invalid numeric value, set to unlimited\n";
+        return 0;
+    }
+
+    // Split numeric part and suffix
+    std::string suffix = strtoupper(trim(str.substr(idx)));
+
+    uint64_t multiplier = 1;
+
+    if (suffix.empty() || suffix == "B")
+        multiplier = 1;
+    else if (suffix == "K" || suffix == "KB")
+        multiplier = 1024ULL;
+    else if (suffix == "M" || suffix == "MB")
+        multiplier = 1024ULL * 1024ULL;
+    else if (suffix == "G" || suffix == "GB")
+        multiplier = 1024ULL * 1024ULL * 1024ULL;
+    else
+    {
+        std::cout << "WARNING: upload_max_filesize Invalid size suffix, set to unlimited\n";
+        return 0;
+    }
+
+    // Ensure entire numeric part was valid
+    if (idx == 0)
+    {
+        std::cout << "WARNING: upload_max_filesize No numeric value found, set to unlimited\n";
+        return 0;
+    }
+    // Overflow protection
+    if (value > std::numeric_limits<uint64_t>::max() / multiplier)
+    {
+        std::cout << "WARNING: upload_max_filesize Size overflow, set to unlimited\n";
+        return 0;
+    }
+    return value * multiplier;
+}
+
 Server::Server()
 {
     this->listenFd = -1;
@@ -222,7 +272,7 @@ void Server::setConfig(const char *filename)
                 current.autoindex = true;
         }
         else if (key == "upload_max_filesize")
-            current.upload_max_filesize = value;
+            current.upload_max_filesize = parse_size(value);
         else if (key == "php_upload_max_filesize")
             current.php_upload_max_filesize = value;
         else if (key == "php_post_max_size")
@@ -230,10 +280,7 @@ void Server::setConfig(const char *filename)
         else if (key == "php_memory_limit")
             current.php_memory_limit = value;
         else
-        {
             std::cout << "WARNING::Invalid config key: " << key << "\n";
-            // throw KeyError();
-        }
     }
 
     if (inServerBlock)
