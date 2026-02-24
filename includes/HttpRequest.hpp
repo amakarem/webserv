@@ -40,7 +40,6 @@ private:
     size_t bodyReceived;
     std::string cgiHeaders;
     std::string rawCookieHeader;
-    // std::map<std::string, std::string> cookies;
 
 public:
     HttpRequest();
@@ -67,8 +66,6 @@ public:
     void reset();
     std::string gettmpFileName();
     std::string getBody();
-    // void parseCookies(const std::string& header);
-    // std::string getCookie(const std::string& key) const;
     std::string getrawCookieHeader() const;
 };
 

@@ -24,14 +24,6 @@ struct Redirect
     int code; // e.g. 301, 302
 };
 
-// struct SessionData
-// {
-//     int visitCount;
-//     time_t lastAccess;
-
-//     SessionData() : visitCount(0), lastAccess(std::time(NULL)) {}
-// };
-
 struct ServerConfig
 {
     std::string ip = "0.0.0.0";          // listen interface
@@ -48,7 +40,6 @@ struct ServerConfig
     std::string php_upload_max_filesize = "20M";
     std::string php_post_max_size = "20M";
     std::string php_memory_limit = "128M";
-    // std::map<std::string, SessionData> sessions;
 };
 
 #endif

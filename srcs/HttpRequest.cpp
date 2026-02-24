@@ -59,40 +59,10 @@ void HttpRequest::decodePath()
     this->path = output;
 }
 
-// void HttpRequest::parseCookies(const std::string& header)
-// {
-//     std::stringstream ss(header);
-//     std::string pair;
-
-//     while (std::getline(ss, pair, ';'))
-//     {
-//         size_t pos = pair.find('=');
-//         if (pos == std::string::npos)
-//             continue;
-
-//         std::string key = pair.substr(0, pos);
-//         std::string value = pair.substr(pos + 1);
-
-//         // trim spaces
-//         key.erase(0, key.find_first_not_of(" "));
-//         value.erase(0, value.find_first_not_of(" "));
-
-//         cookies[key] = value;
-//     }
-// }
-
 std::string HttpRequest::getrawCookieHeader() const
 {
     return rawCookieHeader;
 }
-
-// std::string HttpRequest::getCookie(const std::string& key) const
-// {
-//     std::map<std::string, std::string>::const_iterator it = cookies.find(key);
-//     if (it != cookies.end())
-//         return it->second;
-//     return "";
-// }
 
 bool HttpRequest::append(const char *data, size_t len)
 {
@@ -131,8 +101,6 @@ bool HttpRequest::append(const char *data, size_t len)
             keepAlive = true;
         if (contentLength > 0)
         {
-            // std::string tmp = tmpdir + "/httpbodyXXXXXX";
-            // char tmpName[] = tmp.c_str(); // XXXXXX will be replaced
             std::string tmpName = tmpdir + "/httpbodyXXXXXX"; // XXXXXX will be replaced
             int fd = mkstemp(tmpName.data());
             if (fd < 0)
@@ -388,8 +356,6 @@ std::string HttpRequest::buildHttpResponse(const std::string &body, int httpCode
         connectionHeader = "Keep-Alive: timeout=5";
     if (httpCode != 200 && fileSize == 0)
         newbody = "<h1>" + getHttpCodeMsg(httpCode) + "</h1>";
-    // if (httpCode == 200)
-    // {
     std::string mime = (this->path.empty() ? "text/html" : getMimeType());
     oss << "HTTP/1.1 " << httpCode << " " << getHttpCodeMsg(httpCode) << "\r\n";
     if (fileSize > 0)
@@ -418,28 +384,7 @@ std::string HttpRequest::buildHttpResponse(const std::string &body, int httpCode
 
     if (newbody.length() > 0)
         oss << newbody; // append body only if small message
-    // }
-    // else if (httpCode == 403)
-    // {
-    //     std::string msg = "<h1>403 Forbidden</h1>";
-    //     oss << "HTTP/1.1 403 Forbidden\r\n";
-    //     oss << "Content-Length: " << msg.length() << "\r\n";
-    //     oss << "Content-Type: text/html\r\n";
-    //     oss << "Connection: " << connectionHeader << "\r\n";
-    //     oss << "\r\n";
-    //     oss << msg;
-    // }
-    // else
-    // {
-    //     std::string msg = "<h1>404 Not Found</h1>";
-    //     oss << "HTTP/1.1 404 Not Found\r\n";
-    //     oss << "Content-Length: " << msg.length() << "\r\n";
-    //     oss << "Content-Type: text/html\r\n";
-    //     oss << "Connection: " << connectionHeader << "\r\n";
-    //     oss << "\r\n";
-    //     oss << msg;
-    // }
-
+ 
     return oss.str();
 }
 
