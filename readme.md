@@ -1,4 +1,4 @@
-*This project has been created as part of the 42 curriculum by aelaaser, blohrer, frocha
+*This project has been created as part of the 42 curriculum by aelaaser.
 
 # WebServ
 
@@ -55,7 +55,7 @@ WebServ configuration is done through a config file defining one or more servers
 
 - `allowupload` — configure upload paths, it's 2 parts the endpoint and the localfolder example (allowupload /upload_request /var/www/uploads;) any POST request to upload_request will save the file into /var/www/uploads
 
-- `upload_max_filesize` — maximum file upload size for direct upload defualt set to unlimited
+- `upload_max_filesize` — maximum file upload size for direct upload also it's also set the max post size. defualt set to unlimited.
 
 - `php_upload_max_filesize` — maximum file upload size for PHP defualt set to 20M
 
