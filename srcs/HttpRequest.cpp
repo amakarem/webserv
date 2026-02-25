@@ -141,10 +141,10 @@ bool HttpRequest::append(const char *data, size_t len)
             keepAlive = true;
         if (contentLength > 0)
         {
-            if (contentLength > getMaxContentLength() && getMaxContentLength() != 0)
+            if (isOverLimit())
             {
-                //this->HttpStatusCode = 413;
-                std::cout << "413 Content Too Large\n";
+                setRequestError(413);
+                return false;
             }
             std::string tmpName = tmpdir + "/httpbodyXXXXXX"; // XXXXXX will be replaced
             int fd = mkstemp(tmpName.data());
@@ -302,7 +302,12 @@ bool HttpRequest::isPost() const
     return (false);
 }
 
-size_t HttpRequest::getContentLength() const
+bool HttpRequest::isOverLimit() const
+{
+    return (this->MaxContentLength != 0 && this->contentLength > this->MaxContentLength);
+}
+
+uint64_t HttpRequest::getContentLength() const
 {
     return this->contentLength;
 }

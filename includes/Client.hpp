@@ -77,7 +77,7 @@ public:
     bool isFinished() const;
 
     std::string resolvePath(const std::string &path);
-    void generateErrorPage(int errorCode);
+    void generateErrorPage(int errorCode, bool fin = true);
     std::string generateDirectoryListing(const std::string &dir);
     bool stopHere();
     bool continueAfterHeader();

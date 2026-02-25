@@ -262,8 +262,8 @@ int Client::readRequest()
         {
             if (request.isInvalidRequest())
             {
-                std::cout << "ERROR isInvalidRequest: " << request.getHttpStatusCode() << "\n";
-                this->generateErrorPage(request.getHttpStatusCode());
+                std::cout << "ERROR Invalid Request: " << request.getHttpStatusCode() << "\n";
+                this->generateErrorPage(request.getHttpStatusCode(), false);
                 return (0);
             }
             return (1);
@@ -471,7 +471,7 @@ std::string Client::resolvePath(const std::string &path)
     return fullPath;
 }
 
-void Client::generateErrorPage(int errorCode)
+void Client::generateErrorPage(int errorCode, bool fin)
 {
     auto it = config.error_pages.find(errorCode);
     request.setRequestError(errorCode);
@@ -488,7 +488,8 @@ void Client::generateErrorPage(int errorCode)
         std::cout << it->second << "\n";
     }
     this->setHeaderBuffer(request.buildHttpResponse("", 0));
-    this->setFinished(true);
+    if (fin)
+        this->setFinished(true);
     return;
 }
 

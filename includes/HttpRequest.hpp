@@ -58,7 +58,7 @@ public:
     void setRequestComplete();
     bool isPost() const;
     bool isInvalidRequest() const;
-    size_t getContentLength() const;
+    uint64_t getContentLength() const;
     size_t getBodyReceived() const;
     std::string getContentType() const;
     std::string getHttpCodeMsg(int httpCode);
@@ -72,6 +72,7 @@ public:
     void setRequestError(int err);
     void setMaxContentLength(uint64_t _MaxContentLength);
     uint64_t getMaxContentLength();
+    bool isOverLimit() const;
     std::string getrawCookieHeader() const;
 };
 
